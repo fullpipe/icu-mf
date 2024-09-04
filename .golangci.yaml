@@ -1,0 +1,24 @@
+linters:
+  disable:
+    - gofumpt
+    - depguard
+  presets:
+    - bugs
+    # - comment
+    # - complexity
+    # - error
+    - format
+    - import
+    - metalinter
+    - module
+    - performance
+    - sql
+    # - style
+    # - test
+    - unused
+issues:
+  exclude-rules:
+    - path: 'parse/parser.go'
+      linters:
+        - govet
+        - tagalign

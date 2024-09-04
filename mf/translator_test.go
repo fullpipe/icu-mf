@@ -1,0 +1,377 @@
+package mf
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"golang.org/x/text/language"
+)
+
+func Test_translator_Trans(t *testing.T) {
+	tests := []struct {
+		name    string
+		msg     string
+		lang    language.Tag
+		args    []TranslationArg
+		want    string
+		wantErr bool
+	}{
+		{
+			"simple text just works",
+			"foo bar!",
+			language.English,
+			[]TranslationArg{Arg("foo", "wow")},
+			"foo bar!",
+			false,
+		},
+		{
+			"plain args works fine with different spacing",
+			"I {verb} { ArT } {\ntarGet3\n\t}.",
+			language.English,
+			[]TranslationArg{Arg("verb", "have"), Arg("ArT", "an"), Arg("tarGet3", "apple")},
+			"I have an apple.",
+			false,
+		},
+		{
+			"error on missing plain arg",
+			"so {bar}!",
+			language.English,
+			[]TranslationArg{Arg("foo", "wow")},
+			"msg_id",
+			true,
+		},
+		{
+			"error on invalid message",
+			"so {foo!",
+			language.English,
+			[]TranslationArg{Arg("foo", "wow")},
+			"msg_id",
+			true,
+		},
+		{
+			"error on empty expression",
+			"so {}!",
+			language.English,
+			[]TranslationArg{Arg("foo", "wow")},
+			"msg_id",
+			true,
+		},
+		{
+			"error on invalid argument name",
+			"so {#$%}!",
+			language.English,
+			[]TranslationArg{Arg("#$%", "wow")},
+			"msg_id",
+			true,
+		},
+
+		// select
+		{
+			"error on empty select",
+			"so {foo, select}!",
+			language.English,
+			[]TranslationArg{Arg("foo", "wow")},
+			"msg_id",
+			true,
+		},
+		{
+			"error on select without 'other' case",
+			"so {foo, select, wow {good}}!",
+			language.English,
+			[]TranslationArg{Arg("foo", "wow")},
+			"msg_id",
+			true,
+		},
+		{
+			"no error on select with 'other' case",
+			"so {foo, select, wow {good} other {better}}!",
+			language.English,
+			[]TranslationArg{Arg("foo", "wow")},
+			"so good!",
+			false,
+		},
+
+		// plural
+		{
+			"error on empty plural",
+			"so {foo, plural}!",
+			language.English,
+			[]TranslationArg{Arg("foo", 1)},
+			"msg_id",
+			true,
+		},
+		{
+			"error on plural without 'other' case",
+			"so {foo, plural, one {good}}!",
+			language.English,
+			[]TranslationArg{Arg("foo", 1)},
+			"msg_id",
+			true,
+		},
+		{
+			"no error on plural with 'other' case",
+			"so {foo, plural, one {good} other {better}}!",
+			language.English,
+			[]TranslationArg{Arg("foo", 1)},
+			"so good!",
+			false,
+		},
+		{
+			"strict cases first",
+			"so {foo, plural, =1 {good} one {bad} other {better}}!",
+			language.English,
+			[]TranslationArg{Arg("foo", 1)},
+			"so good!",
+			false,
+		},
+		{
+			"Welsh plural zero",
+			`{foo, plural,
+                zero {# cŵn, # cathod}
+                one {# ci, # gath}
+                two {# gi, # gath}
+                few {# chi, # cath}
+                many {# chi, # chath}
+                other {# ci, # cath}
+            }`,
+			language.MustParse("cy"),
+			[]TranslationArg{Arg("foo", 0)},
+			"0 cŵn, 0 cathod",
+			false,
+		},
+		{
+			"Welsh plural one",
+			`{foo, plural,
+                zero {# cŵn, # cathod}
+                one {# ci, # gath}
+                two {# gi, # gath}
+                few {# chi, # cath}
+                many {# chi, # chath}
+                other {# ci, # cath}
+            }`,
+			language.MustParse("cy"),
+			[]TranslationArg{Arg("foo", 1)},
+			"1 ci, 1 gath",
+			false,
+		},
+		{
+			"Welsh plural two",
+			`{foo, plural,
+                zero {# cŵn, # cathod}
+                one {# ci, # gath}
+                two {# gi, # gath}
+                few {# chi, # cath}
+                many {# chi, # chath}
+                other {# ci, # cath}
+            }`,
+			language.MustParse("cy"),
+			[]TranslationArg{Arg("foo", 2)},
+			"2 gi, 2 gath",
+			false,
+		},
+		{
+			"Welsh plural few",
+			`{foo, plural,
+                zero {# cŵn, # cathod}
+                one {# ci, # gath}
+                two {# gi, # gath}
+                few {# chi, # cath}
+                many {# chi, # chath}
+                other {# ci, # cath}
+            }`,
+			language.MustParse("cy"),
+			[]TranslationArg{Arg("foo", 3)},
+			"3 chi, 3 cath",
+			false,
+		},
+		{
+			"Welsh plural many",
+			`{foo, plural,
+                zero {# cŵn, # cathod}
+                one {# ci, # gath}
+                two {# gi, # gath}
+                few {# chi, # cath}
+                many {# chi, # chath}
+                other {# ci, # cath}
+            }`,
+			language.MustParse("cy"),
+			[]TranslationArg{Arg("foo", 6)},
+			"6 chi, 6 chath",
+			false,
+		},
+		{
+			"Welsh plural other",
+			`{foo, plural,
+                zero {# cŵn, # cathod}
+                one {# ci, # gath}
+                two {# gi, # gath}
+                few {# chi, # cath}
+                many {# chi, # chath}
+                other {# ci, # cath}
+            }`,
+			language.MustParse("cy"),
+			[]TranslationArg{Arg("foo", 4)},
+			"4 ci, 4 cath",
+			false,
+		},
+		{
+			"Offset used for plural cases #1",
+			`{foo, plural, offset: 1
+                =1 {one before offset}
+                one {one after offset}
+                other {other}
+            }`,
+			language.English,
+			[]TranslationArg{Arg("foo", 1)},
+			"one before offset",
+			false,
+		},
+		{
+			"Offset used for plural cases #2",
+			`{foo, plural, offset: 1
+                =1 {one before offset}
+                one {one after offset}
+                other {other}
+            }`,
+			language.English,
+			[]TranslationArg{Arg("foo", 2)},
+			"one after offset",
+			false,
+		},
+		{
+			"Offset used for plural cases #3",
+			`{foo, plural, offset: 1
+                =1 {one before offset}
+                one {one after offset}
+                other {# other}
+            }`,
+			language.English,
+			[]TranslationArg{Arg("foo", 3)},
+			"2 other",
+			false,
+		},
+
+		// selectordinal
+		{
+			"Select ordinal basic usage #1",
+			`You finished {place, selectordinal,
+                one   {#st}
+                two   {#nd}
+                few   {#rd}
+                other {#th}
+            }!`,
+			language.English,
+			[]TranslationArg{Arg("place", 1)},
+			"You finished 1st!",
+			false,
+		},
+		{
+			"Select ordinal basic usage #2",
+			`You finished {place, selectordinal,
+                one   {#st}
+                two   {#nd}
+                few   {#rd}
+                other {#th}
+            }!`,
+			language.English,
+			[]TranslationArg{Arg("place", 2)},
+			"You finished 2nd!",
+			false,
+		},
+		{
+			"Select ordinal basic usage #3",
+			`You finished {place, selectordinal,
+                one   {#st}
+                two   {#nd}
+                few   {#rd}
+                other {#th}
+            }!`,
+			language.English,
+			[]TranslationArg{Arg("place", 9)},
+			"You finished 9th!",
+			false,
+		},
+		{
+			"Select ordinal basic usage #4",
+			`You finished {place, selectordinal,
+                one   {#st}
+                two   {#nd}
+                few   {#rd}
+                other {#th}
+            }!`,
+			language.English,
+			[]TranslationArg{Arg("place", 23)},
+			"You finished 23rd!",
+			false,
+		},
+		{
+			"percent number format",
+			`this lib is {progress, number, percent} ready!`,
+			language.English,
+			[]TranslationArg{Arg("progress", 0.423)},
+			"this lib is 42.3% ready!",
+			false,
+		},
+		{
+			"percent number format greater 100",
+			`this lib is {progress, number, percent} ready!`,
+			language.English,
+			[]TranslationArg{Arg("progress", "1.3")},
+			"this lib is 130% ready!",
+			false,
+		},
+		{
+			"integer number format",
+			`big number {num, number, integer}!`,
+			language.English,
+			[]TranslationArg{Arg("num", 123456789)},
+			"big number 123,456,789!",
+			false,
+		},
+		{
+			"integer number format",
+			`big number {num, number, integer}!`,
+			language.Spanish,
+			[]TranslationArg{Arg("num", 123456789)},
+			"big number 123.456.789!",
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dictionary := new(MockedDictionary)
+			dictionary.On("Get", "msg_id").Return(tt.msg, nil)
+
+			var testErr error
+
+			tr := &translator{
+				dictionary: dictionary,
+				errorHandler: func(err error, _ string, _ map[string]any) {
+					t.Log(err.Error())
+					testErr = err
+				},
+				lang: tt.lang,
+			}
+
+			got := tr.Trans("msg_id", tt.args...)
+			assert.Equal(t, tt.want, got)
+
+			if tt.wantErr {
+				assert.Error(t, testErr)
+			} else {
+				assert.NoError(t, testErr)
+			}
+		})
+	}
+}
+
+type MockedDictionary struct {
+	mock.Mock
+}
+
+func (m *MockedDictionary) Get(path string) (string, error) {
+	args := m.Called(path)
+
+	return args.String(0), args.Error(1)
+}
