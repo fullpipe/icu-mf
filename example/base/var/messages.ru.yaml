@@ -1,0 +1,31 @@
+title: --- {lang} ---
+subtitle: >-
+  {lang, select,
+    ru {без запасного варианта}
+    other {запасной вариант RU}
+  }
+
+say:
+  hello: "Привет, {name}!"
+  goodbye: "{name}, до скорого!"
+
+user:
+  profile:
+    dogs: >-
+      У меня {num, plural
+        =0 {нет собаки}
+        =1 {одна собака}
+        one {# собака}
+        few {# собаки}
+        many {# собак}
+        other {# собаки}
+      }
+    cats: >-
+      {num, plural
+        =0 {У меня нет кошек}
+        =1 {У меня одна кошка}
+        one {У меня # кошка}
+        few {У меня # кошки}
+        many {У меня # кошeк}
+        other {У меня # кошeки}
+      }

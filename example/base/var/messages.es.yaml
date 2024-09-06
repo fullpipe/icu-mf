@@ -1,0 +1,25 @@
+title: --- {lang} ---
+subtitle: >-
+  {lang, select,
+    es {sin respaldo}
+    other {respaldo a ES}
+  }
+
+say:
+  hello: Hello, {name}!
+  goodbye: Goodbye, {name}!
+
+user:
+  profile:
+    dogs: >-
+      {num, plural
+        =0 {No tengo un perro}
+        =1 {Tengo un perro}
+        other {Tengo # perros}
+      }
+    cats: >-
+      {num, plural
+        =0 {No tengo un gato}
+        =1 {Tengo un gato}
+        other {Tengo # gatos}
+      }

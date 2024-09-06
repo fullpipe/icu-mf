@@ -1,0 +1,25 @@
+title: --- {lang} ---
+subtitle: >-
+  {lang, select,
+    en {no fallback}
+    other {fallback to EN}
+  }
+
+say:
+  hello: Hola {name}!
+  goodbye: "{name}, hasta pronto!"
+
+user:
+  profile:
+    dogs: >-
+      I have {num, plural
+        =0 {no dogs}
+        one {# dog}
+        other {# dogs}
+      }
+    cats: >-
+      I have {num, plural
+        =0 {no cats}
+        one {# cat}
+        other {# cats}
+      }
