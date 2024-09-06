@@ -60,15 +60,17 @@ Translate messages by their ID
 ```go
 tr := bundle.Translator("en")
 
-slog.Info(
-    tr.Trans("say_hello", mf.Arg("name", "Bob"))
-)
+tr.Trans("invitation.status",
+    mf.Arg("gender_of_host", "female"),
+    mf.Arg("num_guests", 5),
+    mf.Arg("guest", "Sionia"),
+    mf.Arg("host", "Rina"),
+) // Rina invites Sionia and 4 other people to her party.
+
 
 trEs := bundle.Translator("es")
 
-slog.Info(
-    trEs.Trans("say_hello", mf.Arg("name", "Aníbal"))
-)
+trEs.Trans("say_hello", mf.Arg("name", "Aníbal"))
 ```
 
 <details>
@@ -115,6 +117,7 @@ func main() {
 	slog.Info(tr.Trans("say_hello", mf.Arg("name", "Bob")))
 }
 ```
+
 </details>
 
 ### YAML
@@ -123,24 +126,24 @@ YAML allows you to organize your translations in a tree-like structure.
 
 ```yaml
 user:
-    profile:
-        name: My name is {name}
-        age: I'm {age, plural, one {# year} other {# years}} old
-    account_form:
-        username_field: "Enter your username:"
-        error: >-
-            {name, select
-                required {specify {field}}
-                min {{field} requires at least 10 chars}
-                other {some unknown error with {field}}
-            }
+  profile:
+    name: My name is {name}
+    age: I'm {age, plural, one {# year} other {# years}} old
+  account_form:
+    username_field: 'Enter your username:'
+    error: >-
+      {name, select
+          required {specify {field}}
+          min {{field} requires at least 10 chars}
+          other {some unknown error with {field}}
+      }
 
 payments: ...
 
 server:
-    http:
-        404: Page not found
-        503: Oops!
+  http:
+    404: Page not found
+    503: Oops!
 ```
 
 And you get messages by their "path"
@@ -152,9 +155,6 @@ tr.Trans(
     mf.Arg("name", "min"), mf.Arg("field", "description"),
 )
 ```
-
-
-
 
 ## MessageFormat overview
 
@@ -171,9 +171,8 @@ say_hello: 'Hello {name}!'
 Everything in `{...}` will be processed as an argument and will be replaced by the provided context arguments.
 
 ```go
-log.Println(
-    tr.Trans("say_hello", mf.Arg("name", "Bob"))
-) // prints "Hello, Bob!"
+tr.Trans("say_hello", mf.Arg("name", "Bob"))
+// Hello, Bob!
 ```
 
 ### Simple select
@@ -183,40 +182,34 @@ log.Println(
 
 # the 'other' key is required, and is selected if no other case matches
 invitation:
-    title: >-
-        {organizer_gender, select,
-            female   {{organizer_name} has invited you to her party!}
-            male     {{organizer_name} has invited you to his party!}
-            multiple {{organizer_name} have invited you to their party!}
-            other    {{organizer_name} has invited you to their party!}
-        }
-    body: ...
+  title: >-
+    {organizer_gender, select,
+        female   {{organizer_name} has invited you to her party!}
+        male     {{organizer_name} has invited you to his party!}
+        multiple {{organizer_name} have invited you to their party!}
+        other    {{organizer_name} has invited you to their party!}
+    }
+  body: ...
 ```
 
 ```go
-log.Println(
-    tr.Trans(
-        "invitation.title",
-        mf.Arg("organizer_name", "Ryan"),
-        mf.Arg("organizer_gender", "male"),
-    )
-) // prints "Ryan has invited you to his party!"
+tr.Trans(
+    "invitation.title",
+    mf.Arg("organizer_name", "Ryan"),
+    mf.Arg("organizer_gender", "male"),
+) // Ryan has invited you to his party!
 
-log.Println(
-    tr.Trans(
-        "invitation.title",
-        mf.Arg("organizer_name", "John & Jane"),
-        mf.Arg("organizer_gender", "multiple"),
-    )
-) // prints "John & Jane have invited you to their party!"
+tr.Trans(
+    "invitation.title",
+    mf.Arg("organizer_name", "John & Jane"),
+    mf.Arg("organizer_gender", "multiple"),
+) // John & Jane have invited you to their party!
 
-log.Println(
-    tr.Trans(
-        "invitation.title",
-        mf.Arg("organizer_name", "ACME Company"),
-        mf.Arg("organizer_gender", "not_applicable"),
-    )
-) // prints "ACME Company has invited you to their party!"
+tr.Trans(
+    "invitation.title",
+    mf.Arg("organizer_name", "ACME Company"),
+    mf.Arg("organizer_gender", "not_applicable"),
+) // ACME Company has invited you to their party!
 ```
 
 As you can see, the `{...}` syntax behaves differently here:
@@ -232,11 +225,11 @@ There is another function, `plural`, similar to `select`. It allows you to handl
 ```yaml
 # translations/messages.en.yaml
 num_of_apples: >-
-    {apples, plural,
-        =0    {I don't have an apple}
-        one   {I have one apple}
-        other {I have # apples!}
-    }
+  {apples, plural,
+      =0    {I don't have an apple}
+      one   {I have one apple}
+      other {I have # apples!}
+  }
 ```
 
 Pluralization rules are actually quite complex and differ for each language.
@@ -256,28 +249,27 @@ By prefixing with `=`, you can match exact values (like 0 in the above example).
 # translations/messages.ru.yaml
 
 num_of_apples: >-
-    {apples, plural,
-        =0    {У меня нет яблок}
-        =1    {У меня одно яблоко}
-        one   {У меня # яблоко}
-        few   {У меня # яблока}
-        many  {У меня # яблок}
-        other {У меня # яблок}
-    }
+  {apples, plural,
+      =0    {У меня нет яблок}
+      =1    {У меня одно яблоко}
+      one   {У меня # яблоко}
+      few   {У меня # яблока}
+      many  {У меня # яблок}
+      other {У меня # яблок}
+  }
 ```
 
 The usage of this string is the same as with `select`:
 
 ```go
 // for EN
-log.Println(
-    tr.Trans("num_of_apples", mf.Arg("apples", 5))
-) // prints "I have 5 apples!"
+
+tr.Trans("num_of_apples", mf.Arg("apples", 5))
+// I have 5 apples!
 
 // for RU
-log.Println(
-    tr.Trans("num_of_apples", mf.Arg("apples", 3))
-) // prints "У меня 3 яблока"
+trRU.Trans("num_of_apples", mf.Arg("apples", 3))
+// У меня 3 яблока
 
 ```
 
@@ -290,32 +282,28 @@ You can also set an `offset` variable to determine whether the pluralization sho
 ```yaml
 # translations/messages.en.yaml
 party_status: >-
-    {num_guests, plural, offset:1
-        =0    {{host} does not give a party.}
-        =1    {{host} invites {guest} to her party.}
-        =2    {{host} invites {guest} and one other person to her party.}
-        other {{host} invites {guest} and # other people to her party.}
-    }
+  {num_guests, plural, offset:1
+      =0    {{host} does not give a party.}
+      =1    {{host} invites {guest} to her party.}
+      =2    {{host} invites {guest} and one other person to her party.}
+      other {{host} invites {guest} and # other people to her party.}
+  }
 ```
 
 ```go
-log.Println(
-    tr.Trans(
-        "party_status",
-        mf.Arg("num_guests", 1),
-        mf.Arg("host", "Rogna"),
-        mf.Arg("guest", "Azog"),
-    )
-) // prints "Rogna invites Azog to her party."
+tr.Trans(
+    "party_status",
+    mf.Arg("num_guests", 1),
+    mf.Arg("host", "Rogna"),
+    mf.Arg("guest", "Azog"),
+) // Rogna invites Azog to her party.
 
-log.Println(
-    tr.Trans(
-        "party_status",
-        mf.Arg("num_guests", 5),
-        mf.Arg("host", "Rogna"),
-        mf.Arg("guest", "Azog"),
-    )
-) // prints "Rogna invites Azog and 4 other people to her party."
+tr.Trans(
+    "party_status",
+    mf.Arg("num_guests", 5),
+    mf.Arg("host", "Rogna"),
+    mf.Arg("guest", "Azog"),
+) // Rogna invites Azog and 4 other people to her party.
 ```
 
 First, we compare `num_guests` with the strict cases `=0`, `=1`, and `=2`.
@@ -330,26 +318,26 @@ You could make pretty complex nested messages if needed.
 # translations/messages.en.yaml
 
 invitation_status: >-
-    {gender_of_host, select,
-        female {{num_guests, plural, offset:1
-            =0    {{host} does not give a party.}
-            =1    {{host} invites {guest} to her party.}
-            =2    {{host} invites {guest} and one other person to her party.}
-            other {{host} invites {guest} and # other people to her party.}
-        }}
-        male {{num_guests, plural, offset:1
-            =0    {{host} does not give a party.}
-            =1    {{host} invites {guest} to his party.}
-            =2    {{host} invites {guest} and one other person to his party.}
-            other {{host} invites {guest} and # other people to his party.}
-        }}
-        other {{num_guests, plural, offset:1
-            =0    {{host} does not give a party.}
-            =1    {{host} invites {guest} to their party.}
-            =2    {{host} invites {guest} and one other person to their party.}
-            other {{host} invites {guest} and # other people to their party.}
-        }}
-    }
+  {gender_of_host, select,
+      female {{num_guests, plural, offset:1
+          =0    {{host} does not give a party.}
+          =1    {{host} invites {guest} to her party.}
+          =2    {{host} invites {guest} and one other person to her party.}
+          other {{host} invites {guest} and # other people to her party.}
+      }}
+      male {{num_guests, plural, offset:1
+          =0    {{host} does not give a party.}
+          =1    {{host} invites {guest} to his party.}
+          =2    {{host} invites {guest} and one other person to his party.}
+          other {{host} invites {guest} and # other people to his party.}
+      }}
+      other {{num_guests, plural, offset:1
+          =0    {{host} does not give a party.}
+          =1    {{host} invites {guest} to their party.}
+          =2    {{host} invites {guest} and one other person to their party.}
+          other {{host} invites {guest} and # other people to their party.}
+      }}
+  }
 ```
 
 ### Additional Functions
@@ -361,24 +349,23 @@ Similar to `plural`, `selectordinal` allows you to use numbers as ordinal scale:
 ```yaml
 # translations/messages.en.yaml
 finish_place: >-
-    You finished {place, selectordinal,
-        one   {#st}
-        two   {#nd}
-        few   {#rd}
-        other {#th}
-    }!
+  You finished {place, selectordinal,
+      one   {#st}
+      two   {#nd}
+      few   {#rd}
+      other {#th}
+  }!
 ```
 
 ```go
-log.Println(
-    tr.Trans("finish_place", mf.Arg("place", 1))
-) // prints "You finished 1st!"
-log.Println(
-    tr.Trans("finish_place", mf.Arg("place", 9))
-) // prints "You finished 9th!"
-log.Println(
-    tr.Trans("finish_place", mf.Arg("place", 43))
-) // prints "You finished 43rd!"
+tr.Trans("finish_place", mf.Arg("place", 1))
+// You finished 1st!
+
+tr.Trans("finish_place", mf.Arg("place", 9))
+// You finished 9th!
+
+tr.Trans("finish_place", mf.Arg("place", 43))
+// You finished 43rd!
 ```
 
 The possible cases for this are also shown in Unicode's [Language Plural Rules](https://www.unicode.org/cldr/charts/43/supplemental/language_plural_rules.html) document.
@@ -401,13 +388,11 @@ big_num: gran numero {num, number, integer}!
 ```
 
 ```go
-log.Println(
-    tr.Trans("big_num", mf.Arg("num", 123456789))
-) // prints "big number 123,456,789!"
+tr.Trans("big_num", mf.Arg("num", 123456789))
+// big number 123,456,789!
 
-log.Println(
-    bundle.Translator("es").Trans("big_num", mf.Arg("num", 123456789))
-) // prints "gran numero 123.456.789!"
+bundle.Translator("es").Trans("big_num", mf.Arg("num", 123456789))
+// gran numero 123.456.789!
 ```
 
 ##### Percent
@@ -419,13 +404,11 @@ test_cover: we got {cover, number, percent} test coverage!
 ```
 
 ```go
-log.Println(
-    tr.Trans("test_cover", mf.Arg("cover", 0.42))
-) // prints "we got 42% test coverage!"
+tr.Trans("test_cover", mf.Arg("cover", 0.42))
+// we got 42% test coverage!
 
-log.Println(
-    tr.Trans("test_cover", mf.Arg("cover", 1))
-) // prints "we got 100% test coverage!"
+tr.Trans("test_cover", mf.Arg("cover", 1))
+// we got 100% test coverage!
 ```
 
 #### Date and Time
