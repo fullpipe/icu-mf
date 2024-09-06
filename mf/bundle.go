@@ -68,7 +68,11 @@ func (b *Bundle) LoadMessages(rd fs.FS, path string, lang language.Tag) error {
 }
 
 func (b *Bundle) LoadDir(dir fs.FS) error {
-	return fs.WalkDir(dir, ".", func(p string, f fs.DirEntry, _ error) error {
+	return fs.WalkDir(dir, ".", func(p string, f fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
 		if f.IsDir() {
 			return nil
 		}

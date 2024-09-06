@@ -5,6 +5,75 @@ To work with them easily, use [ICU MessageFormat](https://unicode-org.github.io/
 
 ## Usage
 
+Import package
+
+```go
+import "github.com/fullpipe/icu-mf/mf"
+```
+
+Locate messages with go:embed
+
+```go
+//go:embed var/messages.*.yaml
+var messagesDir embed.FS
+
+// or you could load messages dynamically
+messagesDir := os.DirFS("var")
+```
+
+Create translations bundle
+
+```go
+bundle, err := mf.NewBundle(
+    // If not possible to find a message for the specific language, fallback to English (EN)
+    mf.WithDefaulLangFallback(language.English),
+
+    // We could fine-tune fallbacks for some languages
+    mf.WithLangFallback(language.BritishEnglish, language.English),
+    mf.WithLangFallback(language.Portuguese, language.Spanish),
+
+
+    // We assume that the translated messages are mostly correct.
+    // However, if any errors occur during translation,
+    // they will be directed to the error handler.
+    mf.WithErrorHandler(func(err error, key string, ctx map[string]any) {
+        slog.Error(err.Error(), slog.String("key", key), slog.Any("ctx", ctx))
+
+        // or
+        //panic(err)
+    }),
+)
+
+if err != nil {
+    log.Fatal(err)
+}
+
+// Load all yaml files in directory as messages
+err = bundle.LoadDir(messagesDir)
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+Translate messages by their ID
+
+```go
+tr := bundle.Translator("en")
+
+slog.Info(
+    tr.Trans("say_hello", mf.Arg("name", "Bob"))
+)
+
+trEs := bundle.Translator("es")
+
+slog.Info(
+    trEs.Trans("say_hello", mf.Arg("name", "Aníbal"))
+)
+```
+
+<details>
+  <summary>Full example</summary>
+
 ```go
 package main
 
@@ -46,6 +115,7 @@ func main() {
 	slog.Info(tr.Trans("say_hello", mf.Arg("name", "Bob")))
 }
 ```
+</details>
 
 ## MessageFormat overview
 
@@ -129,6 +199,7 @@ num_of_apples: >-
         other {I have # apples!}
     }
 ```
+
 Pluralization rules are actually quite complex and differ for each language.
 For instance, Russian uses different plural forms for numbers ending with 1;
 numbers ending with 2, 3, or 4; numbers ending with 5, 6, 7, 8, or 9;
@@ -253,6 +324,11 @@ There are some minor functions to work with numbers and dates.
 # translations/messages.en.yaml
 
 big_num: big number {num, number, integer}!
+
+
+# translations/messages.es.yaml
+
+big_num: gran numero {num, number, integer}!
 ```
 
 ```go
@@ -262,7 +338,7 @@ log.Println(
 
 log.Println(
     bundle.Translator("es").Trans("big_num", mf.Arg("num", 123456789))
-) // prints "big number 123.456.789!"
+) // prints "gran numero 123.456.789!"
 ```
 
 ##### Percent
