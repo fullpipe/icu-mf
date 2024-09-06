@@ -165,7 +165,7 @@ MessageFormat allows to use placeholders in your messages.
 ```yaml
 # translations/messages.en.yaml
 
-say_hello: 'Hello {name}!'
+say_hello: 'Hello, {name}!'
 ```
 
 Everything in `{...}` will be processed as an argument and will be replaced by the provided context arguments.
