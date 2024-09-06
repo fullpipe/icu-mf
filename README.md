@@ -36,8 +36,8 @@ bundle, err := mf.NewBundle(
     // We assume that the translated messages are mostly correct.
     // However, if any errors occur during translation,
     // they will be directed to the error handler.
-    mf.WithErrorHandler(func(err error, key string, ctx map[string]any) {
-        slog.Error(err.Error(), slog.String("key", key), slog.Any("ctx", ctx))
+    mf.WithErrorHandler(func(err error, id string, ctx map[string]any) {
+        slog.Error(err.Error(), slog.String("id", id), slog.Any("ctx", ctx))
 
         // or
         //panic(err)
@@ -96,8 +96,8 @@ func main() {
 		mf.WithLangFallback(language.BritishEnglish, language.English),
 		mf.WithLangFallback(language.Portuguese, language.Spanish),
 
-		mf.WithErrorHandler(func(err error, key string, ctx map[string]any) {
-			slog.Error(err.Error(), slog.String("key", key), slog.Any("ctx", ctx))
+		mf.WithErrorHandler(func(err error, id string, ctx map[string]any) {
+			slog.Error(err.Error(), slog.String("id", id), slog.Any("ctx", ctx))
 		}),
 	)
 
@@ -116,6 +116,45 @@ func main() {
 }
 ```
 </details>
+
+### YAML
+
+YAML allows you to organize your translations in a tree-like structure.
+
+```yaml
+user:
+    profile:
+        name: My name is {name}
+        age: I'm {age, plural, one {# year} other {# years}} old
+    account_form:
+        username_field: "Enter your username:"
+        error: >-
+            {name, select
+                required {specify {field}}
+                min {{field} requires at least 10 chars}
+                other {some unknown error with {field}}
+            }
+
+payments: ...
+
+server:
+    http:
+        404: Page not found
+        503: Oops!
+```
+
+And you get messages by their "path"
+
+```go
+tr.Trans("user.profile.age", mf.Arg("age", 42))
+tr.Trans(
+    "user.account_form.error",
+    mf.Arg("name", "min"), mf.Arg("field", "description"),
+)
+```
+
+
+
 
 ## MessageFormat overview
 
@@ -282,6 +321,36 @@ log.Println(
 First, we compare `num_guests` with the strict cases `=0`, `=1`, and `=2`.
 If nothing matches, we subtract the `offset`, `num_guests = num_guests - offset`,
 and then determine the plural case based on the result.
+
+#### Nesting
+
+You could make pretty complex nested messages if needed.
+
+```yaml
+# translations/messages.en.yaml
+
+invitation_status: >-
+    {gender_of_host, select,
+        female {{num_guests, plural, offset:1
+            =0    {{host} does not give a party.}
+            =1    {{host} invites {guest} to her party.}
+            =2    {{host} invites {guest} and one other person to her party.}
+            other {{host} invites {guest} and # other people to her party.}
+        }}
+        male {{num_guests, plural, offset:1
+            =0    {{host} does not give a party.}
+            =1    {{host} invites {guest} to his party.}
+            =2    {{host} invites {guest} and one other person to his party.}
+            other {{host} invites {guest} and # other people to his party.}
+        }}
+        other {{num_guests, plural, offset:1
+            =0    {{host} does not give a party.}
+            =1    {{host} invites {guest} to their party.}
+            =2    {{host} invites {guest} and one other person to their party.}
+            other {{host} invites {guest} and # other people to their party.}
+        }}
+    }
+```
 
 ### Additional Functions
 

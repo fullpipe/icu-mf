@@ -359,6 +359,39 @@ func Test_translator_Trans(t *testing.T) {
 			"big number 123.456.789!",
 			false,
 		},
+
+		{
+			"nested example",
+			`{gender_of_host, select,
+    female {{num_guests, plural, offset:1
+        =0    {{host} does not give a party.}
+        =1    {{host} invites {guest} to her party.}
+        =2    {{host} invites {guest} and one other person to her party.}
+        other {{host} invites {guest} and # other people to her party.}
+    }}
+    male {{num_guests, plural, offset:1
+        =0    {{host} does not give a party.}
+        =1    {{host} invites {guest} to his party.}
+        =2    {{host} invites {guest} and one other person to his party.}
+        other {{host} invites {guest} and # other people to his party.}
+    }}
+    other {{num_guests, plural, offset:1
+        =0    {{host} does not give a party.}
+        =1    {{host} invites {guest} to their party.}
+        =2    {{host} invites {guest} and one other person to their party.}
+        other {{host} invites {guest} and # other people to their party.}
+    }}
+}`,
+			language.English,
+			[]TranslationArg{
+				Arg("gender_of_host", "female"),
+				Arg("num_guests", 2),
+				Arg("guest", "Sionia"),
+				Arg("host", "Rina"),
+			},
+			"Rina invites Sionia and one other person to her party.",
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
