@@ -91,6 +91,28 @@ func Test_translator_Trans(t *testing.T) {
 			"so good!",
 			false,
 		},
+		{
+			"no error on select with 'other' case and new lines",
+			`so {foo, select,
+                wow {good}
+                other {better}
+            }!`,
+			language.English,
+			[]TranslationArg{Arg("foo", "wow")},
+			"so good!",
+			false,
+		},
+		{
+			"no error on select with 'other' case and new lines",
+			`{lang, select,
+                en {no fallback}
+                other {fallback to EN}
+            }`,
+			language.English,
+			[]TranslationArg{Arg("lang", "en")},
+			"no fallback",
+			false,
+		},
 
 		// plural
 		{

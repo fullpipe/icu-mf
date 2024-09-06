@@ -113,7 +113,7 @@ func TestBundle_Translator(t *testing.T) {
 	assert.Equal(t, "en", b.Translator("pl").Trans("foo"), "fallback to defalt lang")
 	assert.Equal(t, "en", b.Translator("FOO").Trans("foo"), "invalid lang fallback to defalt lang")
 	assert.Equal(t, "enbar", b.Translator("es").Trans("bar_id"), "lang with dictionary fallbacks to default lang")
-	assert.Equal(t, "es", b.Translator("po").Trans("es"), "lang fallback")
+	assert.Equal(t, "es", b.Translator("pt").Trans("es"), "lang fallback")
 	assert.Equal(t, "none_id", b.Translator("pl").Trans("none_id"), "dummy translator if nothing works")
 	assert.Equal(t, "none_id", b.Translator("en").Trans("none_id"), "dummy translator if nothing works")
 }

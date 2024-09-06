@@ -1,10 +1,9 @@
-# Translate Messages using the ICU MessageFormat
+# ICU MessageFormat
 
 Messages in your application are never static. They have variables, pluralization, and formatting.
 To work with them easily, use [ICU MessageFormat](https://unicode-org.github.io/icu/userguide/format_parse/messages/).
 
 ## Usage
-
 
 ```go
 package main

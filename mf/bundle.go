@@ -59,7 +59,10 @@ func (b *Bundle) LoadMessages(rd fs.FS, path string, lang language.Tag) error {
 		return fmt.Errorf("unable to load %s: language %s already has messages loaded", path, lang)
 	}
 
-	b.dictionaries[lang] = NewDictionary(string(yamlData))
+	b.dictionaries[lang], err = NewDictionary(yamlData)
+	if err != nil {
+		return errors.Wrap(err, "unable to create dictionary")
+	}
 
 	return nil
 }

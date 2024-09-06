@@ -1,0 +1,10 @@
+foo: bar
+one:
+  two:
+    three: four
+multyline: |-
+  a
+  b
+oneline: >-
+  a
+  b

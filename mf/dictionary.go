@@ -2,9 +2,8 @@ package mf
 
 import (
 	"fmt"
-	"strings"
 
-	"github.com/goccy/go-yaml"
+	y3 "gopkg.in/yaml.v3"
 )
 
 type Dictionary interface {
@@ -17,53 +16,55 @@ func (*dummyDictionary) Get(id string) (string, error) {
 	return "", fmt.Errorf("no message with id %s", id)
 }
 
-func NewDictionary(yaml string) Dictionary {
-	return &dictionary{
-		yamlContent: yaml,
-		cache: map[string]struct {
-			data string
-			err  error
-		}{},
+func NewDictionary(yaml []byte) (Dictionary, error) {
+	d := &dictionary{
+		flatMap: map[string]string{},
 	}
+
+	var document y3.Node
+	if err := y3.Unmarshal(yaml, &document); err != nil {
+		return nil, err
+	}
+
+	if len(document.Content) > 0 {
+		d.buildFlatMap("", document.Content[0])
+	}
+
+	return d, nil
 }
 
 type dictionary struct {
-	yamlContent string
-	cache       map[string]struct {
-		data string
-		err  error
-	}
+	flatMap map[string]string
 }
 
 func (d *dictionary) Get(id string) (string, error) {
-	data, isCached := d.cache[id]
-	if isCached {
-		return data.data, data.err
+	msg, ok := d.flatMap[id]
+	if !ok {
+		return "", fmt.Errorf("no message with id %s", id)
 	}
 
-	var message string
-
-	path, err := yaml.PathString("$." + id)
-	if err != nil {
-		return d.cacheAndReturn(id, message, err)
-	}
-
-	err = path.Read(strings.NewReader(d.yamlContent), &message)
-	if err != nil {
-		return d.cacheAndReturn(id, message, err)
-	}
-
-	return d.cacheAndReturn(id, message, err)
+	return msg, nil
 }
 
-func (d *dictionary) cacheAndReturn(key string, data string, err error) (string, error) {
-	d.cache[key] = struct {
-		data string
-		err  error
-	}{
-		data: data,
-		err:  err,
-	}
+func (d *dictionary) buildFlatMap(prefix string, yn *y3.Node) {
+	for i := 0; i < len(yn.Content); i++ {
+		n := yn.Content[i]
 
-	return data, err
+		if n.Kind == y3.MappingNode {
+			d.buildFlatMap(prefix+n.Value+".", n)
+
+			continue
+		}
+
+		if n.Kind == y3.ScalarNode {
+			if yn.Content[i+1].Kind == y3.ScalarNode {
+				d.flatMap[prefix+n.Value] = yn.Content[i+1].Value
+			} else if yn.Content[i+1].Kind == y3.MappingNode {
+				d.buildFlatMap(prefix+n.Value+".", yn.Content[i+1])
+			}
+
+			i++
+			continue
+		}
+	}
 }
