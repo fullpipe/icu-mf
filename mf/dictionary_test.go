@@ -23,6 +23,7 @@ deep:
         e
         f
 `))
+	require.NoError(t, err)
 
 	res, err := d.Get("one.two")
 	require.NoError(t, err)
