@@ -1,7 +1,7 @@
 # ICU MessageFormat
 
 [![test](https://github.com/fullpipe/icu-mf/actions/workflows/test.yml/badge.svg)](https://github.com/fullpipe/icu-mf/actions/workflows/test.yml)
-[![lint](https://github.com/fullpipe/icu-mf/actions/workflows/golangci-lint.yml/badge.svg)](https://github.com/fullpipe/icu-mf/actions/workflows/golangci-lint.yml)
+[![lint](https://github.com/fullpipe/icu-mf/actions/workflows/lint.yml/badge.svg)](https://github.com/fullpipe/icu-mf/actions/workflows/lint.yml)
 
 Messages in your application are never static. They have variables, pluralization, and formatting.
 To work with them easily, use [ICU MessageFormat](https://unicode-org.github.io/icu/userguide/format_parse/messages/).
