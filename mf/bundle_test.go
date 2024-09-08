@@ -125,9 +125,11 @@ func TestBundle_LoadDir(t *testing.T) {
 	require.NoError(t, b.LoadDir(fstest.MapFS{
 		"messages.en.yaml": {Data: []byte("foo: bar")},
 		"messages.es.yaml": {Data: []byte("foo: bar")},
+		"messages.ru.yml":  {Data: []byte("foo: bar")},
 	}), "no error on normal yaml files")
 	assert.NotNil(t, b.dictionaries[language.English])
 	assert.NotNil(t, b.dictionaries[language.Spanish])
+	assert.NotNil(t, b.dictionaries[language.Russian])
 }
 
 func TestBundle_Translator(t *testing.T) {
