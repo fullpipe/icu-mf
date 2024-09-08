@@ -83,7 +83,7 @@ func (b *bundle) LoadDir(dir fs.FS) error {
 			return nil
 		}
 
-		if path.Ext(f.Name()) != ".yaml" {
+		if path.Ext(f.Name()) != ".yaml" || path.Ext(f.Name()) != ".yml" {
 			return nil
 		}
 
