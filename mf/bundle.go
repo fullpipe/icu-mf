@@ -11,7 +11,13 @@ import (
 	"golang.org/x/text/language"
 )
 
-type Bundle struct {
+type Bundle interface {
+	LoadMessages(rd fs.FS, path string, lang language.Tag) error
+	LoadDir(dir fs.FS) error
+	Translator(lang string) Translator
+}
+
+type bundle struct {
 	fallbacks    map[language.Tag]language.Tag
 	translators  map[language.Tag]Translator
 	dictionaries map[language.Tag]Dictionary
@@ -22,10 +28,10 @@ type Bundle struct {
 
 type ErrorHandler func(err error, id string, ctx map[string]any)
 
-type BundleOption func(b *Bundle)
+type BundleOption func(b *bundle)
 
-func NewBundle(options ...BundleOption) (*Bundle, error) {
-	bundle := &Bundle{
+func NewBundle(options ...BundleOption) (Bundle, error) {
+	bundle := &bundle{
 		fallbacks:    map[language.Tag]language.Tag{},
 		translators:  map[language.Tag]Translator{},
 		dictionaries: map[language.Tag]Dictionary{},
@@ -43,7 +49,7 @@ func NewBundle(options ...BundleOption) (*Bundle, error) {
 	return bundle, nil
 }
 
-func (b *Bundle) LoadMessages(rd fs.FS, path string, lang language.Tag) error {
+func (b *bundle) LoadMessages(rd fs.FS, path string, lang language.Tag) error {
 	yamlFile, err := rd.Open(path)
 	if err != nil {
 		return errors.Wrap(err, "unable to open file")
@@ -67,7 +73,7 @@ func (b *Bundle) LoadMessages(rd fs.FS, path string, lang language.Tag) error {
 	return nil
 }
 
-func (b *Bundle) LoadDir(dir fs.FS) error {
+func (b *bundle) LoadDir(dir fs.FS) error {
 	return fs.WalkDir(dir, ".", func(p string, f fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -95,7 +101,7 @@ func (b *Bundle) LoadDir(dir fs.FS) error {
 	})
 }
 
-func (b *Bundle) Translator(lang string) Translator {
+func (b *bundle) Translator(lang string) Translator {
 	tag, err := language.Parse(lang)
 	if err != nil {
 		tag = b.defaultLang
@@ -111,7 +117,7 @@ func (b *Bundle) Translator(lang string) Translator {
 	return b.translators[tag]
 }
 
-func (b *Bundle) getTranlator(tag language.Tag) Translator {
+func (b *bundle) getTranlator(tag language.Tag) Translator {
 	tr, ok := b.translators[tag]
 	if ok {
 		return tr
@@ -159,19 +165,19 @@ func (b *Bundle) getTranlator(tag language.Tag) Translator {
 }
 
 func WithDefaulLangFallback(l language.Tag) BundleOption {
-	return func(b *Bundle) {
+	return func(b *bundle) {
 		b.defaultLang = l
 	}
 }
 
 func WithLangFallback(from language.Tag, to language.Tag) BundleOption {
-	return func(b *Bundle) {
+	return func(b *bundle) {
 		b.fallbacks[from] = to
 	}
 }
 
 func WithErrorHandler(handler ErrorHandler) BundleOption {
-	return func(b *Bundle) {
+	return func(b *bundle) {
 		b.defaultErrorHandler = handler
 	}
 }

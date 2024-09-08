@@ -23,7 +23,14 @@ func TestNewBundle(t *testing.T) {
 }
 
 func TestWithDefaulLangFallback(t *testing.T) {
-	b, _ := NewBundle()
+	b := &bundle{
+		fallbacks:    map[language.Tag]language.Tag{},
+		translators:  map[language.Tag]Translator{},
+		dictionaries: map[language.Tag]Dictionary{},
+
+		defaultLang:         language.Und,
+		defaultErrorHandler: func(_ error, _ string, _ map[string]any) {},
+	}
 
 	assert.Equal(t, language.Und, b.defaultLang)
 	WithDefaulLangFallback(language.Afrikaans)(b)
@@ -31,7 +38,14 @@ func TestWithDefaulLangFallback(t *testing.T) {
 }
 
 func TestWithLangFallback(t *testing.T) {
-	b, _ := NewBundle()
+	b := &bundle{
+		fallbacks:    map[language.Tag]language.Tag{},
+		translators:  map[language.Tag]Translator{},
+		dictionaries: map[language.Tag]Dictionary{},
+
+		defaultLang:         language.Und,
+		defaultErrorHandler: func(_ error, _ string, _ map[string]any) {},
+	}
 
 	assert.Equal(t, language.Und, b.fallbacks[language.AmericanEnglish])
 	WithLangFallback(language.AmericanEnglish, language.English)(b)
@@ -39,7 +53,14 @@ func TestWithLangFallback(t *testing.T) {
 }
 
 func TestWithErrorHandler(t *testing.T) {
-	b, _ := NewBundle()
+	b := &bundle{
+		fallbacks:    map[language.Tag]language.Tag{},
+		translators:  map[language.Tag]Translator{},
+		dictionaries: map[language.Tag]Dictionary{},
+
+		defaultLang:         language.Und,
+		defaultErrorHandler: func(_ error, _ string, _ map[string]any) {},
+	}
 
 	assert.NotNil(t, b.defaultErrorHandler)
 	errHandler := func(_ error, _ string, _ map[string]any) {}
@@ -51,7 +72,15 @@ func TestWithErrorHandler(t *testing.T) {
 }
 
 func TestBundle_LoadMessages(t *testing.T) {
-	b, _ := NewBundle()
+	b := &bundle{
+		fallbacks:    map[language.Tag]language.Tag{},
+		translators:  map[language.Tag]Translator{},
+		dictionaries: map[language.Tag]Dictionary{},
+
+		defaultLang:         language.Und,
+		defaultErrorHandler: func(_ error, _ string, _ map[string]any) {},
+	}
+
 	fs := fstest.MapFS{
 		"non_readable": {
 			Mode: fs.ModeDir,
@@ -75,7 +104,14 @@ func TestBundle_LoadMessages(t *testing.T) {
 }
 
 func TestBundle_LoadDir(t *testing.T) {
-	b, _ := NewBundle()
+	b := &bundle{
+		fallbacks:    map[language.Tag]language.Tag{},
+		translators:  map[language.Tag]Translator{},
+		dictionaries: map[language.Tag]Dictionary{},
+
+		defaultLang:         language.Und,
+		defaultErrorHandler: func(_ error, _ string, _ map[string]any) {},
+	}
 
 	require.NoError(t, b.LoadDir(fstest.MapFS{"dir.en": {Mode: fs.ModeDir}}), "no error on empty fs")
 	assert.Nil(t, b.dictionaries[language.English], "does not loads dirs")
