@@ -1,4 +1,4 @@
-# ICU MessageFormat
+# ICU MessageFormat for Golang
 
 [![test](https://github.com/fullpipe/icu-mf/actions/workflows/test.yml/badge.svg)](https://github.com/fullpipe/icu-mf/actions/workflows/test.yml)
 [![lint](https://github.com/fullpipe/icu-mf/actions/workflows/lint.yml/badge.svg)](https://github.com/fullpipe/icu-mf/actions/workflows/lint.yml)
@@ -370,6 +370,15 @@ invitation_status: >-
           other {{host} invites {guest} and # other people to their party.}
       }}
   }
+```
+
+#### Inline
+
+Cases in `plural`, `select` or `selectordinal` could be inlined
+
+```yaml
+# translations/messages.en.yaml
+num_of_apples: 'There {apples, plural, =0 {are no} one {is one} other {are # apples}} apples'
 ```
 
 ### Additional Functions
