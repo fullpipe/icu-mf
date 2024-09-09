@@ -6,6 +6,35 @@
 Messages in your application are never static. They have variables, pluralization, and formatting.
 To work with them easily, use [ICU MessageFormat](https://unicode-org.github.io/icu/userguide/format_parse/messages/).
 
+## Why?
+
+There is a great package for translations called [nicksnyder/go-i18n](https://github.com/nicksnyder/go-i18n).
+However, once I had a lot of translations in chatbots, it started to feel cumbersome.
+
+So, I tried to make translations simpler. Now, instead:
+
+```go
+localizer.Localize(&i18n.LocalizeConfig{
+    DefaultMessage: &i18n.Message{
+        ID: "PersonCats",
+        One: "{{.Name}} has {{.Count}} cat.",
+        Other: "{{.Name}} has {{.Count}} cats.",
+    },
+    TemplateData: map[string]interface{}{
+        "Name": "Nick",
+        "Count": 2,
+    },
+    PluralCount: 2,
+}) // Nick has 2 cats.
+```
+
+I got:
+
+```go
+tr.Trans("person.cats", mf.Arg("name", "Nick"), mf.Arg("cats_num", 2))
+// Nick has 2 cats.
+```
+
 ## Usage
 
 Import package
