@@ -1,6 +1,7 @@
 # ICU MessageFormat for Golang
 
 [![test](https://github.com/fullpipe/icu-mf/actions/workflows/test.yml/badge.svg)](https://github.com/fullpipe/icu-mf/actions/workflows/test.yml)
+[![codecov](https://codecov.io/github/fullpipe/icu-mf/graph/badge.svg?token=W6C02M3BFQ)](https://codecov.io/github/fullpipe/icu-mf)
 [![lint](https://github.com/fullpipe/icu-mf/actions/workflows/lint.yml/badge.svg)](https://github.com/fullpipe/icu-mf/actions/workflows/lint.yml)
 
 Messages in your application are never static. They have variables, pluralization, and formatting.
