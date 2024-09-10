@@ -118,6 +118,39 @@ func TestPlural_Eval(t *testing.T) {
 			"other",
 			false,
 		},
+		{
+			"other case if no other case",
+			fields{
+				"count",
+				language.English,
+				0,
+				nil,
+				map[plural.Form]Evalable{
+					plural.Few:   Content("few"),
+					plural.Other: Content("other"),
+				},
+			},
+			Context{"count": 1},
+			"other",
+			false,
+		},
+
+		{
+			"offset",
+			fields{
+				"count",
+				language.English,
+				2,
+				nil,
+				map[plural.Form]Evalable{
+					plural.One:   Content("one"),
+					plural.Other: PlainArg("#"),
+				},
+			},
+			Context{"count": 4},
+			"2",
+			false,
+		},
 	}
 
 	for _, tt := range tests {
