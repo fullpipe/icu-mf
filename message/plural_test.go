@@ -1,6 +1,7 @@
 package message
 
 import (
+	"reflect"
 	"testing"
 
 	"golang.org/x/text/feature/plural"
@@ -118,6 +119,39 @@ func TestPlural_Eval(t *testing.T) {
 			"other",
 			false,
 		},
+		{
+			"other case if no other case",
+			fields{
+				"count",
+				language.English,
+				0,
+				nil,
+				map[plural.Form]Evalable{
+					plural.Few:   Content("few"),
+					plural.Other: Content("other"),
+				},
+			},
+			Context{"count": 1},
+			"other",
+			false,
+		},
+
+		{
+			"offset",
+			fields{
+				"count",
+				language.English,
+				2,
+				nil,
+				map[plural.Form]Evalable{
+					plural.One:   Content("one"),
+					plural.Other: PlainArg("#"),
+				},
+			},
+			Context{"count": 4},
+			"2",
+			false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -134,6 +168,136 @@ func TestPlural_Eval(t *testing.T) {
 
 			if got != tt.want {
 				t.Errorf("Plural.Eval() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_toPluralForm(t *testing.T) {
+	tests := []struct {
+		name    string
+		num     any
+		want    pm
+		wantErr bool
+	}{
+		{
+			"int",
+			int(42),
+			pm{i: 42},
+			false,
+		},
+		{
+			"-int",
+			int(-42),
+			pm{i: 42},
+			false,
+		},
+		{
+			"int8",
+			int8(42),
+			pm{i: 42},
+			false,
+		},
+		{
+			"-int8",
+			int8(-42),
+			pm{i: 42},
+			false,
+		},
+		{
+			"int16",
+			int16(42),
+			pm{i: 42},
+			false,
+		},
+		{
+			"-int16",
+			int16(-42),
+			pm{i: 42},
+			false,
+		},
+		{
+			"int32",
+			int32(42),
+			pm{i: 42},
+			false,
+		},
+		{
+			"-int32",
+			int32(-42),
+			pm{i: 42},
+			false,
+		},
+		{
+			"int64",
+			int64(42),
+			pm{i: 42},
+			false,
+		},
+		{
+			"-int64",
+			int64(-42),
+			pm{i: 42},
+			false,
+		},
+		{
+			"uint",
+			uint(42),
+			pm{i: 42},
+			false,
+		},
+		{
+			"uint8",
+			uint8(42),
+			pm{i: 42},
+			false,
+		},
+		{
+			"uint16",
+			uint16(42),
+			pm{i: 42},
+			false,
+		},
+		{
+			"uint32",
+			uint32(42),
+			pm{i: 42},
+			false,
+		},
+		{
+			"uint64",
+			uint64(42),
+			pm{i: 42},
+			false,
+		},
+		{
+			"error on unknown type",
+			[]byte("foo"),
+			pm{},
+			true,
+		},
+		{
+			"float string",
+			"42.4200",
+			pm{i: 42, v: 4, w: 2, f: 4200, t: 42},
+			false,
+		},
+		{
+			"float string",
+			"1200.50",
+			pm{i: 1200, v: 2, w: 1, f: 50, t: 5},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := toPluralForm(tt.num)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("toPluralForm() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("toPluralForm() = %v, want %v", got, tt.want)
 			}
 		})
 	}
