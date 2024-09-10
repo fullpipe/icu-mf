@@ -71,6 +71,55 @@ func TestNumber_Eval(t *testing.T) {
 			"123,456,789",
 			false,
 		},
+
+		{
+			"to decimal if no format",
+			"n",
+			NoneNumberFormat,
+			Context{"n": 3.14},
+			"3.14",
+			false,
+		},
+		{
+			"to decimal if invalid format",
+			"n",
+			NumberFormat(42),
+			Context{"n": 3.14},
+			"3.14",
+			false,
+		},
+		{
+			"error on invalid arg",
+			"n",
+			NoneNumberFormat,
+			Context{"n": "foo"},
+			"",
+			true,
+		},
+		{
+			"error on invalid arg",
+			"n",
+			IntegerNumberFormat,
+			Context{"n": "foo"},
+			"",
+			true,
+		},
+		{
+			"error on invalid arg",
+			"n",
+			PercentNumberFormat,
+			Context{"n": "foo"},
+			"",
+			true,
+		},
+		{
+			"error on invalid arg",
+			"n",
+			NumberFormat(42),
+			Context{"n": "foo"},
+			"",
+			true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
