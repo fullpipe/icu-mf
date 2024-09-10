@@ -31,19 +31,25 @@ func (c Context) Int64(key string) (int64, error) {
 	switch i := v.(type) {
 	case int:
 		return int64(i), nil
+	case int8:
+		return int64(i), nil
+	case int16:
+		return int64(i), nil
+	case int32:
+		return int64(i), nil
+	case int64:
+		return int64(i), nil
 	case uint:
 		if i > math.MaxInt64 {
 			return 0, fmt.Errorf("unable to convert uint %v to int64 from arg %s", v, key)
 		}
 
 		return int64(i), nil //nolint:gosec
-	case float64:
+	case uint8:
 		return int64(i), nil
-	case float32:
+	case uint16:
 		return int64(i), nil
-	case int64:
-		return int64(i), nil
-	case int32:
+	case uint32:
 		return int64(i), nil
 	case uint64:
 		if i > math.MaxInt64 {
@@ -51,7 +57,9 @@ func (c Context) Int64(key string) (int64, error) {
 		}
 
 		return int64(i), nil //nolint:gosec
-	case uint32:
+	case float32:
+		return int64(i), nil
+	case float64:
 		return int64(i), nil
 	case string:
 		fl, err := strconv.ParseFloat(i, 64)
