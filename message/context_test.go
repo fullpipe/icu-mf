@@ -221,3 +221,138 @@ func TestContext_Int64(t *testing.T) {
 		})
 	}
 }
+
+func TestContext_Float64(t *testing.T) {
+	tests := []struct {
+		name    string
+		c       Context
+		key     string
+		want    float64
+		wantErr bool
+	}{
+		{
+			"int",
+			Context{"foo": int(42)},
+			"foo",
+			42,
+			false,
+		},
+		{
+			"int8",
+			Context{"foo": int8(42)},
+			"foo",
+			42,
+			false,
+		},
+		{
+			"int16",
+			Context{"foo": int16(42)},
+			"foo",
+			42,
+			false,
+		},
+		{
+			"int32",
+			Context{"foo": int32(42)},
+			"foo",
+			42,
+			false,
+		},
+		{
+			"int64",
+			Context{"foo": int64(42)},
+			"foo",
+			42,
+			false,
+		},
+		{
+			"uint",
+			Context{"foo": uint(42)},
+			"foo",
+			42,
+			false,
+		},
+		{
+			"uint8",
+			Context{"foo": uint8(42)},
+			"foo",
+			42,
+			false,
+		},
+		{
+			"uint16",
+			Context{"foo": uint16(42)},
+			"foo",
+			42,
+			false,
+		},
+		{
+			"uint32",
+			Context{"foo": uint32(42)},
+			"foo",
+			42,
+			false,
+		},
+		{
+			"uint64",
+			Context{"foo": uint64(42)},
+			"foo",
+			42,
+			false,
+		},
+		{
+			"float32",
+			Context{"foo": float32(42.42)},
+			"foo",
+			float64(float32(42.42)),
+			false,
+		},
+		{
+			"float64",
+			Context{"foo": float64(42.42)},
+			"foo",
+			42.42,
+			false,
+		},
+		{
+			"string float",
+			Context{"foo": "42.42"},
+			"foo",
+			42.42,
+			false,
+		},
+		{
+			"string int",
+			Context{"foo": "42"},
+			"foo",
+			42,
+			false,
+		},
+		{
+			"invalid string",
+			Context{"foo": "bar"},
+			"foo",
+			0,
+			true,
+		},
+		{
+			"unknown type",
+			Context{"foo": []byte("bar")},
+			"foo",
+			0,
+			true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.c.Float64(tt.key)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Context.Float64() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Context.Float64() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
