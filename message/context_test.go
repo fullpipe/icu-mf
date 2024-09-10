@@ -207,6 +207,13 @@ func TestContext_Int64(t *testing.T) {
 			0,
 			true,
 		},
+		{
+			"unknown name",
+			Context{"foo": 42},
+			"bar",
+			0,
+			true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -339,6 +346,13 @@ func TestContext_Float64(t *testing.T) {
 			"unknown type",
 			Context{"foo": []byte("bar")},
 			"foo",
+			0,
+			true,
+		},
+		{
+			"unknown name",
+			Context{"foo": 42},
+			"bar",
 			0,
 			true,
 		},
