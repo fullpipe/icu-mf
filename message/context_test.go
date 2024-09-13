@@ -374,8 +374,6 @@ func TestContext_Float64(t *testing.T) {
 }
 
 func TestContext_Time(t *testing.T) {
-	type args struct {
-	}
 	tests := []struct {
 		name    string
 		c       Context
