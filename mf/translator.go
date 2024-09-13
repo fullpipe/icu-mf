@@ -2,6 +2,7 @@ package mf
 
 import (
 	"strings"
+	"time"
 
 	"github.com/fullpipe/icu-mf/message"
 	"github.com/fullpipe/icu-mf/parse"
@@ -67,6 +68,12 @@ type TranslationArg func(ctx *message.Context)
 
 type Argument interface {
 	constraints.Integer | constraints.Float | ~string
+}
+
+func Time(name string, value time.Time) TranslationArg {
+	return func(ctx *message.Context) {
+		ctx.Set(name, value)
+	}
 }
 
 func Arg[T Argument](name string, value T) TranslationArg {

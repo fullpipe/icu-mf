@@ -2,7 +2,9 @@ package message
 
 import (
 	"math"
+	"reflect"
 	"testing"
+	"time"
 )
 
 func Test_context_AsString(t *testing.T) {
@@ -366,6 +368,51 @@ func TestContext_Float64(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("Context.Float64() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestContext_Time(t *testing.T) {
+	tests := []struct {
+		name    string
+		c       Context
+		key     string
+		want    time.Time
+		wantErr bool
+	}{
+		{
+			"error on unknown arg name",
+			Context{"foo": 42},
+			"bar",
+			time.Time{},
+			true,
+		},
+		{
+			"error on unknown arg type",
+			Context{"foo": 42},
+			"foo",
+			time.Time{},
+			true,
+		},
+		{
+			"returns time by name",
+			Context{"foo": time.Date(1961, 4, 12, 6, 7, 3, 0, time.UTC)},
+			"foo",
+			time.Date(1961, 4, 12, 6, 7, 3, 0, time.UTC),
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.c.Time(tt.key)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Context.Time() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Context.Time() = %v, want %v", got, tt.want)
 			}
 		})
 	}

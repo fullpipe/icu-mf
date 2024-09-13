@@ -48,6 +48,8 @@ func buildFragment(f parse.Fragment, lang language.Tag) (Evalable, error) {
 		switch f.Func.Func {
 		case "number":
 			return buildNumber(f.Func, lang)
+		case "date", "time", "datetime":
+			return buildDatetime(f.Func, lang)
 		default:
 			return nil, errors.New("empty fragment")
 		}
@@ -185,4 +187,30 @@ func buildNumber(e *parse.Func, lang language.Tag) (Evalable, error) {
 	}
 
 	return NewNumber(e.ArgName, format, lang), nil
+}
+
+func buildDatetime(e *parse.Func, lang language.Tag) (Evalable, error) {
+	if e == nil {
+		return nil, errors.New("empty expresiion")
+	}
+
+	if e.Func != "date" && e.Func != "time" && e.Func != "datetime" {
+		return nil, errors.New("not a date function")
+	}
+
+	format, ok := strToDatetimeFormatMap[e.Param]
+	if !ok {
+		return nil, fmt.Errorf("date format %s not supported", e.Param)
+	}
+
+	switch e.Func {
+	case "date":
+		return NewDate(e.ArgName, format, lang), nil
+	case "time":
+		return NewTime(e.ArgName, format, lang), nil
+	case "datetime":
+		return NewDatetime(e.ArgName, format, lang), nil
+	}
+
+	return nil, errors.New("not a date function")
 }
