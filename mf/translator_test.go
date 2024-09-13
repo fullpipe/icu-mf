@@ -404,10 +404,10 @@ func Test_translator_Trans(t *testing.T) {
 		},
 		{
 			"time long",
-			"Vostok-1 landing time {st, time, long}.",
+			"Vostok-1 landing time {st, time, medium}.",
 			language.English,
 			[]TranslationArg{Time("st", time.Date(1961, 4, 12, 7, 55, 0, 0, time.UTC))},
-			"Vostok-1 landing time 7:55:00 AM UTC.",
+			"Vostok-1 landing time 7:55:00 AM.",
 			false,
 		},
 		{

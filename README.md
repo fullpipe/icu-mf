@@ -455,4 +455,31 @@ tr.Trans("test_cover", mf.Arg("cover", 1))
 
 #### Date and Time
 
-TODO
+There are `date`, `time`, and `datetime` functions to format `time.Time` arguments.
+Additionally, there are four different formats: `short`, `medium`, `long`, and `full`.
+
+```yaml
+# translations/messages.en.yaml
+
+vostok:
+    start: Vostok-1 start {start_date, datetime, long}.
+    landing: Vostok-1 landing time {land_time, time, medium}.
+apollo:
+    step: First step on the Moon on {step_date, date, long}.
+```
+
+```go
+start := time.Date(1961, 4, 12, 6, 7, 3, 0, time.UTC)
+land := time.Date(1961, 4, 12, 7, 55, 0, 0, time.UTC)
+step := time.Date(1969, 7, 21, 2, 56, 0, 0, time.UTC)
+
+tr.Trans("vostok.start", mf.Time("start_date", start))
+// Vostok-1 start April 12, 1961 at 6:07:03 AM UTC.
+
+tr.Trans("vostok.landing", mf.Time("land_time", land))
+// Vostok-1 landing time 7:55:00 AM.
+
+tr.Trans("apollo.step", mf.Time("step_date", step))
+// First step on the Moon on July 21, 1969.
+```
+
