@@ -3,6 +3,7 @@ package message
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/fullpipe/icu-mf/parse"
 	"github.com/stretchr/testify/assert"
@@ -83,6 +84,41 @@ func Test_buildFragment(t *testing.T) {
 			"bar",
 			false,
 		},
+		{
+			"builds valid date function",
+			parse.Fragment{Func: &parse.Func{ArgName: "foo", Func: "date", Param: "short"}},
+			Context{"foo": time.Date(1961, 4, 12, 6, 7, 3, 0, time.UTC)},
+			"4/12/61",
+			false,
+		},
+		{
+			"builds valid time function",
+			parse.Fragment{Func: &parse.Func{ArgName: "foo", Func: "time", Param: "short"}},
+			Context{"foo": time.Date(1961, 4, 12, 6, 7, 3, 0, time.UTC)},
+			"6:07 AM",
+			false,
+		},
+		{
+			"builds valid datetime function",
+			parse.Fragment{Func: &parse.Func{ArgName: "foo", Func: "datetime", Param: "short"}},
+			Context{"foo": time.Date(1961, 4, 12, 6, 7, 3, 0, time.UTC)},
+			"4/12/61, 6:07 AM",
+			false,
+		},
+		{
+			"error on invalid datetime format",
+			parse.Fragment{Func: &parse.Func{ArgName: "foo", Func: "datetime", Param: "invalid_format"}},
+			Context{"foo": time.Date(1961, 4, 12, 6, 7, 3, 0, time.UTC)},
+			"",
+			true,
+		},
+		{
+			"error on missed arg",
+			parse.Fragment{Func: &parse.Func{ArgName: "foo", Func: "datetime", Param: "invalid_format"}},
+			Context{},
+			"",
+			true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -91,7 +127,6 @@ func Test_buildFragment(t *testing.T) {
 				require.Error(t, err)
 				assert.Nil(t, eval)
 				return
-
 			}
 
 			got, err := eval.Eval(tt.ctx)

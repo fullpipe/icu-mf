@@ -46,6 +46,14 @@ var datetimeJoin = map[DatetimeFormat]string{
 	FullDatetimeFormat:   " at ",
 }
 
+var strToDatetimeFormatMap = map[string]DatetimeFormat{
+	"":       NoneDatetimeFormat,
+	"short":  ShortDatetimeFormat,
+	"medium": MediumDatetimeFormat,
+	"long":   LongDatetimeFormat,
+	"full":   FullDatetimeFormat,
+}
+
 func NewDatetime(argName string, format DatetimeFormat, lang language.Tag) *Datetime {
 	strFormat := dateFormat[format] + datetimeJoin[format] + timeFormat[format]
 
