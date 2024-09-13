@@ -2,6 +2,7 @@ package mf
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -390,6 +391,31 @@ func Test_translator_Trans(t *testing.T) {
 				Arg("host", "Rina"),
 			},
 			"Rina invites Sionia and one other person to her party.",
+			false,
+		},
+
+		{
+			"datetime long",
+			"Vostok-1 start {st, datetime, long}.",
+			language.English,
+			[]TranslationArg{Time("st", time.Date(1961, 4, 12, 6, 7, 3, 0, time.UTC))},
+			"Vostok-1 start April 12, 1961 at 6:07:03 AM UTC.",
+			false,
+		},
+		{
+			"time long",
+			"Vostok-1 landing time {st, time, long}.",
+			language.English,
+			[]TranslationArg{Time("st", time.Date(1961, 4, 12, 7, 55, 0, 0, time.UTC))},
+			"Vostok-1 landing time 7:55:00 AM UTC.",
+			false,
+		},
+		{
+			"date long",
+			"First step on the Moon on {st, date, long}.",
+			language.English,
+			[]TranslationArg{Time("st", time.Date(1969, 7, 21, 2, 56, 0, 0, time.UTC))},
+			"First step on the Moon on July 21, 1969.",
 			false,
 		},
 	}
