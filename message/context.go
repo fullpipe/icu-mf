@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"time"
 )
 
 // type Context interface {
@@ -114,6 +115,20 @@ func (c Context) Float64(key string) (float64, error) {
 	default:
 		return 0, fmt.Errorf("unable to convert %v to float from arg %s", v, key)
 	}
+}
+
+func (c Context) Time(key string) (time.Time, error) {
+	v, ok := c[key]
+	if !ok {
+		return time.Time{}, fmt.Errorf("argument %s not exists", key)
+	}
+
+	t, ok := v.(time.Time)
+	if !ok {
+		return time.Time{}, fmt.Errorf("argument %s is not a time.Time", key)
+	}
+
+	return t, nil
 }
 
 func (c Context) Any(name string) (any, error) {
