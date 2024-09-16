@@ -32,6 +32,10 @@ func Build(in parse.Message, lang language.Tag) (Evalable, error) {
 }
 
 func buildFragment(f parse.Fragment, lang language.Tag) (Evalable, error) {
+	if len(f.Escaped) > 0 {
+		return Content(f.Escaped[1:]), nil
+	}
+
 	if len(f.Text) > 0 {
 		return Content(f.Text), nil
 	}

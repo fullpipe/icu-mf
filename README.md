@@ -189,6 +189,21 @@ tr.Trans(
 )
 ```
 
+### Escaping
+
+Sometimes you need to print `{`, `'`, or `#`. You could escape them with `'` char.
+
+```yaml
+# translations/messages.en.yaml
+escape: "'{foo} is ''{foo}''"
+```
+
+```go
+tr.Trans("escape", mf.Arg("foo", "bar"))
+// {foo} is 'bar'
+```
+
+
 ## MessageFormat overview
 
 ### Placeholders

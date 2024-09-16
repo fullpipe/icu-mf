@@ -32,7 +32,8 @@ type Message struct {
 }
 
 type Fragment struct {
-	Text       string    `(@String | @SubMessageString)`
+	Escaped    string    `(@Escaped | @SubEscaped)`
+	Text       string    `| (@String | @SubMessageString | @Quote | @SubQuote)`
 	PlainArg   *PlainArg `| @@`
 	Func       *Func     `| @@`
 	Expr       *Expr     `| @@`
@@ -42,7 +43,9 @@ type Fragment struct {
 func NewParser() *participle.Parser[Message] {
 	def := lexer.MustStateful(lexer.Rules{
 		"Root": {
-			{Name: `String`, Pattern: `[^{]+`, Action: nil},
+			{Name: `Escaped`, Pattern: `'{|''`, Action: nil},
+			{Name: `Quote`, Pattern: `'`, Action: nil},
+			{Name: `String`, Pattern: `[^'{]+`, Action: nil},
 			{Name: `Expr`, Pattern: `{`, Action: lexer.Push("Expr")},
 		},
 		"Expr": {
@@ -55,8 +58,10 @@ func NewParser() *participle.Parser[Message] {
 			{Name: `SubMessage`, Pattern: `{`, Action: lexer.Push("SubMessage")},
 		},
 		"SubMessage": {
-			{Name: `SubMessageString`, Pattern: `[^{^}^#]+`, Action: nil},
+			{Name: `SubEscaped`, Pattern: `'{|''|'#|'}`, Action: nil},
+			{Name: `SubQuote`, Pattern: `'`, Action: nil},
 			{Name: `Octothorpe`, Pattern: `#`, Action: nil},
+			{Name: `SubMessageString`, Pattern: `[^{^}^#^']+`, Action: nil},
 			{Name: `Expr`, Pattern: `{`, Action: lexer.Push("Expr")},
 			{Name: `SubMessageEnd`, Pattern: `}`, Action: lexer.Pop()},
 		},
