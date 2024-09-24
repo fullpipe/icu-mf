@@ -170,6 +170,18 @@ func WithDefaulLangFallback(l language.Tag) BundleOption {
 	}
 }
 
+func LoadDictionariesFromFS(dir fs.FS) BundleOption {
+	return func(b *bundle) {
+		b.LoadDir(dir)
+	}
+}
+
+func WithDictionary(lang language.Tag, d Dictionary) BundleOption {
+	return func(b *bundle) {
+		b.dictionaries[lang] = d
+	}
+}
+
 func WithLangFallback(from language.Tag, to language.Tag) BundleOption {
 	return func(b *bundle) {
 		b.fallbacks[from] = to
