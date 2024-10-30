@@ -25,39 +25,36 @@ func TestNewBundle(t *testing.T) {
 
 func TestWithDefaulLangFallback(t *testing.T) {
 	b := &bundle{
-		fallbacks:    map[language.Tag]language.Tag{},
-		translators:  map[language.Tag]Translator{},
-		dictionaries: map[language.Tag]Dictionary{},
+		fallbacks:   map[language.Tag]language.Tag{},
+		translators: map[language.Tag]Translator{},
 
 		defaultLang:         language.Und,
 		defaultErrorHandler: func(_ error, _ string, _ map[string]any) {},
 	}
 
 	assert.Equal(t, language.Und, b.defaultLang)
-	WithDefaulLangFallback(language.Afrikaans)(b)
+	require.NoError(t, WithDefaulLangFallback(language.Afrikaans)(b))
 	assert.Equal(t, language.Afrikaans, b.defaultLang)
 }
 
 func TestWithLangFallback(t *testing.T) {
 	b := &bundle{
-		fallbacks:    map[language.Tag]language.Tag{},
-		translators:  map[language.Tag]Translator{},
-		dictionaries: map[language.Tag]Dictionary{},
+		fallbacks:   map[language.Tag]language.Tag{},
+		translators: map[language.Tag]Translator{},
 
 		defaultLang:         language.Und,
 		defaultErrorHandler: func(_ error, _ string, _ map[string]any) {},
 	}
 
 	assert.Equal(t, language.Und, b.fallbacks[language.AmericanEnglish])
-	WithLangFallback(language.AmericanEnglish, language.English)(b)
+	require.NoError(t, WithLangFallback(language.AmericanEnglish, language.English)(b))
 	assert.Equal(t, language.English, b.fallbacks[language.AmericanEnglish])
 }
 
 func TestWithErrorHandler(t *testing.T) {
 	b := &bundle{
-		fallbacks:    map[language.Tag]language.Tag{},
-		translators:  map[language.Tag]Translator{},
-		dictionaries: map[language.Tag]Dictionary{},
+		fallbacks:   map[language.Tag]language.Tag{},
+		translators: map[language.Tag]Translator{},
 
 		defaultLang:         language.Und,
 		defaultErrorHandler: func(_ error, _ string, _ map[string]any) {},
@@ -65,7 +62,7 @@ func TestWithErrorHandler(t *testing.T) {
 
 	assert.NotNil(t, b.defaultErrorHandler)
 	errHandler := func(_ error, _ string, _ map[string]any) {}
-	WithErrorHandler(errHandler)(b)
+	require.NoError(t, WithErrorHandler(errHandler)(b))
 
 	funcName1 := runtime.FuncForPC(reflect.ValueOf(errHandler).Pointer()).Name()
 	funcName2 := runtime.FuncForPC(reflect.ValueOf(b.defaultErrorHandler).Pointer()).Name()
@@ -85,7 +82,7 @@ func TestBundle_Translator(t *testing.T) {
 	b, err = NewBundle(
 		WithDefaulLangFallback(language.English),
 		WithLangFallback(language.Portuguese, language.Spanish),
-		WithFSProvider(fstest.MapFS{
+		WithYamlProvider(fstest.MapFS{
 			"messages.en.yaml": {Data: []byte("foo: en\nbar_id: enbar")},
 			"messages.es.yaml": {Data: []byte("foo: es")},
 		}),

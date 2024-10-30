@@ -11,15 +11,15 @@ import (
 	"golang.org/x/text/language"
 )
 
-type Provider interface {
-	Get(lang language.Tag, path string) (string, error)
+type MessageProvider interface {
+	Get(lang language.Tag, id string) (string, error)
 }
 
-type FSProvider struct {
-	dictionaries map[language.Tag]Dictionary
+type YamlMessageProvider struct {
+	dictionaries map[language.Tag]*YamlDictionary
 }
 
-func (p *FSProvider) Get(lang language.Tag, path string) (string, error) {
+func (p *YamlMessageProvider) Get(lang language.Tag, path string) (string, error) {
 	d, hasDictionary := p.dictionaries[lang]
 	if !hasDictionary {
 		return "", errors.Errorf("no dictionary for lang %s", lang)
@@ -28,9 +28,9 @@ func (p *FSProvider) Get(lang language.Tag, path string) (string, error) {
 	return d.Get(path)
 }
 
-func NewFSProvider(dir fs.FS) (*FSProvider, error) {
-	provider := FSProvider{
-		dictionaries: map[language.Tag]Dictionary{},
+func NewYamlMessageProvider(dir fs.FS) (*YamlMessageProvider, error) {
+	provider := YamlMessageProvider{
+		dictionaries: map[language.Tag]*YamlDictionary{},
 	}
 
 	err := fs.WalkDir(dir, ".", func(p string, f fs.DirEntry, err error) error {
@@ -62,7 +62,7 @@ func NewFSProvider(dir fs.FS) (*FSProvider, error) {
 	return &provider, err
 }
 
-func (p *FSProvider) loadMessages(rd fs.FS, path string, lang language.Tag) error {
+func (p *YamlMessageProvider) loadMessages(rd fs.FS, path string, lang language.Tag) error {
 	yamlFile, err := rd.Open(path)
 	if err != nil {
 		return errors.Wrap(err, "unable to open file")
@@ -78,7 +78,7 @@ func (p *FSProvider) loadMessages(rd fs.FS, path string, lang language.Tag) erro
 		return fmt.Errorf("unable to load %s: language %s already has messages loaded", path, lang)
 	}
 
-	p.dictionaries[lang], err = NewDictionary(yamlData)
+	p.dictionaries[lang], err = NewYamlDictionary(yamlData)
 	if err != nil {
 		return errors.Wrap(err, "unable to create dictionary")
 	}

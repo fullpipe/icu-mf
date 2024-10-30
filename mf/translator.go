@@ -15,8 +15,7 @@ type Translator interface {
 }
 
 type translator struct {
-	provider     Provider
-	dictionary   Dictionary
+	provider     MessageProvider
 	fallback     Translator
 	errorHandler ErrorHandler
 	lang         language.Tag

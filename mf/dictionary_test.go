@@ -8,7 +8,7 @@ import (
 )
 
 func TestDictionaryGet(t *testing.T) {
-	d, err := NewDictionary([]byte(`
+	d, err := NewYamlDictionary([]byte(`
 one:
     two: msg1-2
 foo: bar
@@ -100,7 +100,7 @@ foo:
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d, err := NewDictionary(tt.yaml)
+			d, err := NewYamlDictionary(tt.yaml)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewDictionary() error = %v, wantErr %v", err, tt.wantErr)
 				return

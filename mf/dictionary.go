@@ -10,14 +10,14 @@ type Dictionary interface {
 	Get(path string) (string, error)
 }
 
-type dummyDictionary struct{}
+type DummyDictionary struct{}
 
-func (*dummyDictionary) Get(id string) (string, error) {
+func (*DummyDictionary) Get(id string) (string, error) {
 	return "", fmt.Errorf("no message with id %s", id)
 }
 
-func NewDictionary(yaml []byte) (Dictionary, error) {
-	d := &dictionary{
+func NewYamlDictionary(yaml []byte) (*YamlDictionary, error) {
+	d := &YamlDictionary{
 		flatMap: map[string]string{},
 	}
 
@@ -33,11 +33,11 @@ func NewDictionary(yaml []byte) (Dictionary, error) {
 	return d, nil
 }
 
-type dictionary struct {
+type YamlDictionary struct {
 	flatMap map[string]string
 }
 
-func (d *dictionary) Get(id string) (string, error) {
+func (d *YamlDictionary) Get(id string) (string, error) {
 	msg, ok := d.flatMap[id]
 	if !ok {
 		return "", fmt.Errorf("no message with id %s", id)
@@ -46,7 +46,7 @@ func (d *dictionary) Get(id string) (string, error) {
 	return msg, nil
 }
 
-func (d *dictionary) buildFlatMap(prefix string, yn *y3.Node) {
+func (d *YamlDictionary) buildFlatMap(prefix string, yn *y3.Node) {
 	for i := 0; i < len(yn.Content); i++ {
 		n := yn.Content[i]
 

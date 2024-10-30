@@ -12,10 +12,9 @@ type Bundle interface {
 }
 
 type bundle struct {
-	fallbacks    map[language.Tag]language.Tag
-	translators  map[language.Tag]Translator
-	dictionaries map[language.Tag]Dictionary
-	provider     Provider
+	fallbacks   map[language.Tag]language.Tag
+	translators map[language.Tag]Translator
+	provider    MessageProvider
 
 	defaultLang         language.Tag
 	defaultErrorHandler ErrorHandler
@@ -27,9 +26,8 @@ type BundleOption func(b *bundle) error
 
 func NewBundle(options ...BundleOption) (Bundle, error) {
 	bundle := &bundle{
-		fallbacks:    map[language.Tag]language.Tag{},
-		translators:  map[language.Tag]Translator{},
-		dictionaries: map[language.Tag]Dictionary{},
+		fallbacks:   map[language.Tag]language.Tag{},
+		translators: map[language.Tag]Translator{},
 
 		defaultLang:         language.Und,
 		defaultErrorHandler: func(_ error, _ string, _ map[string]any) {},
@@ -97,26 +95,18 @@ func WithDefaulLangFallback(l language.Tag) BundleOption {
 	}
 }
 
-func WithFSProvider(dir fs.FS) BundleOption {
+func WithYamlProvider(dir fs.FS) BundleOption {
 	return func(b *bundle) error {
-		provider, err := NewFSProvider(dir)
+		provider, err := NewYamlMessageProvider(dir)
 		b.provider = provider
 
 		return err
 	}
 }
 
-func WithProvider(provider Provider) BundleOption {
+func WithProvider(provider MessageProvider) BundleOption {
 	return func(b *bundle) error {
 		b.provider = provider
-
-		return nil
-	}
-}
-
-func WithDictionary(lang language.Tag, d Dictionary) BundleOption {
-	return func(b *bundle) error {
-		b.dictionaries[lang] = d
 
 		return nil
 	}
