@@ -130,7 +130,7 @@ func main() {
 		mf.WithLangFallback(language.BritishEnglish, language.English),
 		mf.WithLangFallback(language.Portuguese, language.Spanish),
 
-                mf.WithYamlProvider(messagesDir),
+		mf.WithYamlProvider(messagesDir),
 
 		mf.WithErrorHandler(func(err error, id string, ctx map[string]any) {
 			slog.Error(err.Error(), slog.String("id", id), slog.Any("ctx", ctx))
