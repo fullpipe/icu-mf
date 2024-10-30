@@ -2,7 +2,6 @@ package main
 
 import (
 	"embed"
-	"log"
 	"log/slog"
 	"math/rand/v2"
 
@@ -31,7 +30,7 @@ func main() {
 	)
 
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	tr := bundle.Translator("en")
