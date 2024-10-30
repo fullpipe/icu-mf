@@ -65,6 +65,11 @@ bundle, err := mf.NewBundle(
     mf.WithLangFallback(language.BritishEnglish, language.English),
     mf.WithLangFallback(language.Portuguese, language.Spanish),
 
+    // Load all yaml files in directory as messages
+    mf.WithYamlProvider(messagesDir),
+
+    // or you could use your own custom message provider
+    // mf.WithProvider(sqlMessageProvider),
 
     // We assume that the translated messages are mostly correct.
     // However, if any errors occur during translation,
@@ -77,12 +82,6 @@ bundle, err := mf.NewBundle(
     }),
 )
 
-if err != nil {
-    log.Fatal(err)
-}
-
-// Load all yaml files in directory as messages
-err = bundle.LoadDir(messagesDir)
 if err != nil {
     log.Fatal(err)
 }
@@ -131,16 +130,13 @@ func main() {
 		mf.WithLangFallback(language.BritishEnglish, language.English),
 		mf.WithLangFallback(language.Portuguese, language.Spanish),
 
+                mf.WithYamlProvider(messagesDir),
+
 		mf.WithErrorHandler(func(err error, id string, ctx map[string]any) {
 			slog.Error(err.Error(), slog.String("id", id), slog.Any("ctx", ctx))
 		}),
 	)
 
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = bundle.LoadDir(messagesDir)
 	if err != nil {
 		log.Fatal(err)
 	}
