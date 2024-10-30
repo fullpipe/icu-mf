@@ -469,13 +469,15 @@ func Test_translator_Trans(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dictionary := new(MockedDictionary)
-			dictionary.On("Get", "msg_id").Return(tt.msg, nil)
+			provider := new(MockedProvider)
+			provider.On("Get", tt.lang, "msg_id").Return(tt.msg, nil)
+
+			t.Log(len(provider.ExpectedCalls))
 
 			var testErr error
 
 			tr := &translator{
-				dictionary: dictionary,
+				provider: provider,
 				errorHandler: func(err error, _ string, _ map[string]any) {
 					t.Log(err.Error())
 					testErr = err
@@ -493,6 +495,16 @@ func Test_translator_Trans(t *testing.T) {
 			}
 		})
 	}
+}
+
+type MockedProvider struct {
+	mock.Mock
+}
+
+func (m *MockedProvider) Get(lang language.Tag, path string) (string, error) {
+	args := m.Called(lang, path)
+
+	return args.String(0), args.Error(1)
 }
 
 type MockedDictionary struct {

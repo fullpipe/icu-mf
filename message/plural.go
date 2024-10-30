@@ -88,7 +88,7 @@ func (p *Plural) Eval(ctx Context) (string, error) {
 	}
 
 	if p.Offset > 0 {
-		offset := uint64(p.Offset)
+		offset := uint64(p.Offset) //nolint: gosec
 		if offset < np.i {
 			np.i -= offset
 		} else {
@@ -124,27 +124,27 @@ func toPluralForm(num any) (pm, error) {
 		if i < 0 {
 			i = -i
 		}
-		return pm{i: uint64(i)}, nil
+		return pm{i: uint64(i)}, nil //nolint: gosec
 	case int8:
 		if i < 0 {
 			i = -i
 		}
-		return pm{i: uint64(i)}, nil
+		return pm{i: uint64(i)}, nil //nolint: gosec
 	case int16:
 		if i < 0 {
 			i = -i
 		}
-		return pm{i: uint64(i)}, nil
+		return pm{i: uint64(i)}, nil //nolint: gosec
 	case int32:
 		if i < 0 {
 			i = -i
 		}
-		return pm{i: uint64(i)}, nil
+		return pm{i: uint64(i)}, nil //nolint: gosec
 	case int64:
 		if i < 0 {
 			i = -i
 		}
-		return pm{i: uint64(i)}, nil
+		return pm{i: uint64(i)}, nil //nolint: gosec
 	case uint:
 		return pm{i: uint64(i)}, nil
 	case uint8:

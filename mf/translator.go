@@ -15,14 +15,14 @@ type Translator interface {
 }
 
 type translator struct {
-	dictionary   Dictionary
+	provider     MessageProvider
 	fallback     Translator
 	errorHandler ErrorHandler
 	lang         language.Tag
 }
 
 func (tr *translator) Trans(id string, args ...TranslationArg) string {
-	yaml, err := tr.dictionary.Get(id)
+	yaml, err := tr.provider.Get(tr.lang, id)
 	if err != nil {
 		if tr.fallback != nil {
 			return tr.fallback.Trans(id, args...)

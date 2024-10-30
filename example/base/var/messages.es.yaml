@@ -6,8 +6,8 @@ subtitle: >-
   }
 
 say:
-  hello: Hello, {name}!
-  goodbye: Goodbye, {name}!
+  hello: Hola, {name}!
+  goodbye: Adiós, {name}!
 
 user:
   profile:

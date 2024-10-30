@@ -2,7 +2,6 @@ package main
 
 import (
 	"embed"
-	"log"
 	"log/slog"
 	"math/rand/v2"
 
@@ -20,6 +19,8 @@ func main() {
 		mf.WithLangFallback(language.BritishEnglish, language.English),
 		mf.WithLangFallback(language.Portuguese, language.Spanish),
 
+		mf.WithYamlProvider(messagesDir),
+
 		mf.WithErrorHandler(func(err error, id string, ctx map[string]any) {
 			slog.Error(err.Error(), slog.String("id", id), slog.Any("ctx", ctx))
 
@@ -29,12 +30,7 @@ func main() {
 	)
 
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = bundle.LoadDir(messagesDir)
-	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	tr := bundle.Translator("en")
