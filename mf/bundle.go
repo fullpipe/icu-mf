@@ -1,19 +1,13 @@
 package mf
 
 import (
-	"fmt"
-	"io"
 	"io/fs"
-	"path"
-	"strings"
 
 	"github.com/pkg/errors"
 	"golang.org/x/text/language"
 )
 
 type Bundle interface {
-	LoadMessages(rd fs.FS, path string, lang language.Tag) error
-	LoadDir(dir fs.FS) error
 	Translator(lang string) Translator
 }
 
@@ -21,6 +15,7 @@ type bundle struct {
 	fallbacks    map[language.Tag]language.Tag
 	translators  map[language.Tag]Translator
 	dictionaries map[language.Tag]Dictionary
+	provider     Provider
 
 	defaultLang         language.Tag
 	defaultErrorHandler ErrorHandler
@@ -28,7 +23,7 @@ type bundle struct {
 
 type ErrorHandler func(err error, id string, ctx map[string]any)
 
-type BundleOption func(b *bundle)
+type BundleOption func(b *bundle) error
 
 func NewBundle(options ...BundleOption) (Bundle, error) {
 	bundle := &bundle{
@@ -41,64 +36,19 @@ func NewBundle(options ...BundleOption) (Bundle, error) {
 	}
 
 	for _, option := range options {
-		option(bundle)
+		err := option(bundle)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if bundle.provider == nil {
+		return nil, errors.New("you have add message provider with WithFSProvider or WithProvider")
 	}
 
 	// TODO: check fallbacks for cicles en -> es -> en -> ...
 
 	return bundle, nil
-}
-
-func (b *bundle) LoadMessages(rd fs.FS, path string, lang language.Tag) error {
-	yamlFile, err := rd.Open(path)
-	if err != nil {
-		return errors.Wrap(err, "unable to open file")
-	}
-
-	yamlData, err := io.ReadAll(yamlFile)
-	if err != nil {
-		return errors.Wrap(err, "unable to read file")
-	}
-
-	_, hasDictionary := b.dictionaries[lang]
-	if hasDictionary {
-		return fmt.Errorf("unable to load %s: language %s already has messages loaded", path, lang)
-	}
-
-	b.dictionaries[lang], err = NewDictionary(yamlData)
-	if err != nil {
-		return errors.Wrap(err, "unable to create dictionary")
-	}
-
-	return nil
-}
-
-func (b *bundle) LoadDir(dir fs.FS) error {
-	return fs.WalkDir(dir, ".", func(p string, f fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if f.IsDir() {
-			return nil
-		}
-
-		if path.Ext(f.Name()) != ".yaml" && path.Ext(f.Name()) != ".yml" {
-			return nil
-		}
-
-		nameParts := strings.Split(f.Name(), ".")
-		if len(nameParts) < 2 {
-			return fmt.Errorf("no lang in file %s", f.Name())
-		}
-
-		tag, err := language.Parse(nameParts[len(nameParts)-2])
-		if err != nil {
-			return errors.Wrap(err, "unable to parse language from filename")
-		}
-
-		return b.LoadMessages(dir, p, tag)
-	})
 }
 
 func (b *bundle) Translator(lang string) Translator {
@@ -123,73 +73,67 @@ func (b *bundle) getTranlator(tag language.Tag) Translator {
 		return tr
 	}
 
-	dictionary, hasDictionary := b.dictionaries[tag]
+	var fallback Translator
 	fallbackTag, hasFallback := b.fallbacks[tag]
-
-	if hasDictionary {
-		var fallback Translator
-
-		if hasFallback {
-			fallback = b.getTranlator(fallbackTag)
-		} else if tag != b.defaultLang {
-			fallback = b.getTranlator(b.defaultLang)
-		}
-
-		return &translator{
-			dictionary:   dictionary,
-			fallback:     fallback,
-			errorHandler: b.defaultErrorHandler,
-			lang:         tag,
-		}
-	}
-
 	if hasFallback {
-		return b.getTranlator(fallbackTag)
-	}
-
-	tr, ok = b.translators[b.defaultLang]
-	if ok {
-		return tr
-	}
-
-	dictionary, hasDictionary = b.dictionaries[b.defaultLang]
-	if !hasDictionary {
-		dictionary = &dummyDictionary{}
+		fallback = b.getTranlator(fallbackTag)
+	} else if tag != b.defaultLang {
+		fallback = b.getTranlator(b.defaultLang)
 	}
 
 	return &translator{
-		dictionary:   dictionary,
+		provider:     b.provider,
+		fallback:     fallback,
 		errorHandler: b.defaultErrorHandler,
 		lang:         tag,
 	}
 }
 
 func WithDefaulLangFallback(l language.Tag) BundleOption {
-	return func(b *bundle) {
+	return func(b *bundle) error {
 		b.defaultLang = l
+
+		return nil
 	}
 }
 
-func LoadDictionariesFromFS(dir fs.FS) BundleOption {
-	return func(b *bundle) {
-		b.LoadDir(dir)
+func WithFSProvider(dir fs.FS) BundleOption {
+	return func(b *bundle) error {
+		provider, err := NewFSProvider(dir)
+		b.provider = provider
+
+		return err
+	}
+}
+
+func WithProvider(provider Provider) BundleOption {
+	return func(b *bundle) error {
+		b.provider = provider
+
+		return nil
 	}
 }
 
 func WithDictionary(lang language.Tag, d Dictionary) BundleOption {
-	return func(b *bundle) {
+	return func(b *bundle) error {
 		b.dictionaries[lang] = d
+
+		return nil
 	}
 }
 
 func WithLangFallback(from language.Tag, to language.Tag) BundleOption {
-	return func(b *bundle) {
+	return func(b *bundle) error {
 		b.fallbacks[from] = to
+
+		return nil
 	}
 }
 
 func WithErrorHandler(handler ErrorHandler) BundleOption {
-	return func(b *bundle) {
+	return func(b *bundle) error {
 		b.defaultErrorHandler = handler
+
+		return nil
 	}
 }

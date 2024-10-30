@@ -20,6 +20,8 @@ func main() {
 		mf.WithLangFallback(language.BritishEnglish, language.English),
 		mf.WithLangFallback(language.Portuguese, language.Spanish),
 
+		mf.WithFSProvider(messagesDir),
+
 		mf.WithErrorHandler(func(err error, id string, ctx map[string]any) {
 			slog.Error(err.Error(), slog.String("id", id), slog.Any("ctx", ctx))
 
@@ -28,11 +30,6 @@ func main() {
 		}),
 	)
 
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = bundle.LoadDir(messagesDir)
 	if err != nil {
 		log.Fatal(err)
 	}

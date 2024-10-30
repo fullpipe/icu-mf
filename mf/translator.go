@@ -15,6 +15,7 @@ type Translator interface {
 }
 
 type translator struct {
+	provider     Provider
 	dictionary   Dictionary
 	fallback     Translator
 	errorHandler ErrorHandler
@@ -22,7 +23,7 @@ type translator struct {
 }
 
 func (tr *translator) Trans(id string, args ...TranslationArg) string {
-	yaml, err := tr.dictionary.Get(id)
+	yaml, err := tr.provider.Get(tr.lang, id)
 	if err != nil {
 		if tr.fallback != nil {
 			return tr.fallback.Trans(id, args...)
