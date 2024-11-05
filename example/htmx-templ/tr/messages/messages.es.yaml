@@ -1,0 +1,19 @@
+title: Ejemplo de contador de manzanas [templ + htmx]
+header: Contador de Manzanas
+counters:
+  global: >-
+    {apples, plural,
+      =0    {No hay manzanas}
+      one   {Globalmente, hay solo una manzana}
+      other {Globalmente, hay # manzanas!}
+    }
+  user: >-
+    {apples, plural,
+      =0    {No tengo ninguna manzana}
+      one   {Tengo una manzana}
+      other {¡Tengo # manzanas!}
+    }
+lang:
+  langs:
+    en: Inglés
+    es: Español
