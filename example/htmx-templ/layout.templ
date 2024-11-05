@@ -1,0 +1,67 @@
+package main
+
+import "htmx-templ/tr"
+import "github.com/fullpipe/icu-mf/mf"
+
+templ layout() {
+    <!DOCTYPE html>
+    <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>{ tr.Tr(ctx, "title") }</title>
+
+            <link rel="stylesheet" href="https://unpkg.com/mvp.css">
+            <script src="https://unpkg.com/htmx.org@2.0.3"></script>
+        </head>
+
+        <body>
+            <header>
+                <nav>
+                    <ul>
+                      for _, l := range []string{"en", "es"} {
+                        <li><a href={ templ.URL("/?lang=" + l) }>{ tr.Tr(ctx, "lang.langs." + l) }</a></li>
+                      }
+                    </ul>
+                </nav>
+                <h1>{ tr.Tr(ctx, "header") }</h1>
+            </header>
+            <main>
+                { children... }
+            </main>
+        </body>
+    </html>
+}
+
+templ counters_widget(global, user int) {
+    <section hx-get="/counters" hx-trigger="load delay:1s" hx-swap="outerHTML">
+        <aside id="global_counter">
+            <center>
+                <h3>Global</h3>
+                <p>{ tr.Tr(ctx, "counters.global", mf.Arg("apples", global)) }</p>
+            </center>
+        </aside>
+        <aside id="user_counter">
+            <center>
+                <h3>User</h3>
+                <p>{ tr.Tr(ctx, "counters.user", mf.Arg("apples", user)) }</p>
+            </center>
+        </aside>
+    </section>
+}
+
+templ actions() {
+    <center>
+        <button hx-post="/counters" hx-vals='{"global": true}' hx-select="#global_counter" hx-target="#global_counter" hx-swap="outerHTML"><b>+1 global apple</b></button>
+        <button hx-post="/counters" hx-vals='{"user": true}' hx-select="#user_counter" hx-target="#user_counter" hx-swap="outerHTML"><b>+1 apple for me</b></button>
+    </center>
+}
+
+templ page_apple_count(global, user int) {
+    @layout() {
+        @templ.Join(
+            counters_widget(global, user),
+            actions(),
+        )
+    }
+}

@@ -1,0 +1,19 @@
+title: Apple counter example [templ + htmx]
+header: Apple counter
+counters:
+  global: >-
+    {apples, plural,
+      =0    {There are no apples}
+      one   {Globaly, there is only single apple}
+      other {Globaly, there are # apples!}
+    }
+  user: >-
+    {apples, plural,
+      =0    {I don't have any apples}
+      one   {I have one apple}
+      other {I have # apples!}
+    }
+lang:
+  langs:
+    en: English
+    es: Spanish
