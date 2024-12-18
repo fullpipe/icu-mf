@@ -14,7 +14,7 @@ var messagesDir embed.FS
 
 func main() {
 	bundle, err := mf.NewBundle(
-		mf.WithDefaulLangFallback(language.English),
+		mf.WithDefaultLangFallback(language.English),
 
 		mf.WithLangFallback(language.BritishEnglish, language.English),
 		mf.WithLangFallback(language.Portuguese, language.Spanish),

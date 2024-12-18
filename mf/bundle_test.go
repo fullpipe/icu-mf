@@ -14,7 +14,7 @@ import (
 
 func TestNewBundle(t *testing.T) {
 	b, err := NewBundle(
-		WithDefaulLangFallback(language.English),
+		WithDefaultLangFallback(language.English),
 		WithLangFallback(language.Portuguese, language.Spanish),
 		WithProvider(new(MockedProvider)),
 	)
@@ -23,7 +23,7 @@ func TestNewBundle(t *testing.T) {
 	assert.NotNil(t, b)
 }
 
-func TestWithDefaulLangFallback(t *testing.T) {
+func TestWithDefaultLangFallback(t *testing.T) {
 	b := &bundle{
 		fallbacks:   map[language.Tag]language.Tag{},
 		translators: map[language.Tag]Translator{},
@@ -33,7 +33,7 @@ func TestWithDefaulLangFallback(t *testing.T) {
 	}
 
 	assert.Equal(t, language.Und, b.defaultLang)
-	require.NoError(t, WithDefaulLangFallback(language.Afrikaans)(b))
+	require.NoError(t, WithDefaultLangFallback(language.Afrikaans)(b))
 	assert.Equal(t, language.Afrikaans, b.defaultLang)
 }
 
@@ -80,7 +80,7 @@ func TestBundle_Translator(t *testing.T) {
 	assert.Equal(t, "msg_id", b.Translator("ru").Trans("msg_id"), "even empty bundle returns some translator")
 
 	b, err = NewBundle(
-		WithDefaulLangFallback(language.English),
+		WithDefaultLangFallback(language.English),
 		WithLangFallback(language.Portuguese, language.Spanish),
 		WithYamlProvider(fstest.MapFS{
 			"messages.en.yaml": {Data: []byte("foo: en\nbar_id: enbar")},
@@ -96,4 +96,54 @@ func TestBundle_Translator(t *testing.T) {
 	assert.Equal(t, "es", b.Translator("pt").Trans("es"), "lang fallback")
 	assert.Equal(t, "none_id", b.Translator("pl").Trans("none_id"), "dummy translator if nothing works")
 	assert.Equal(t, "none_id", b.Translator("en").Trans("none_id"), "dummy translator if nothing works")
+}
+
+func TestCheckCyclicFallbacks(t *testing.T) {
+	tests := []struct {
+		name      string
+		fallbacks map[language.Tag]language.Tag
+		wantErr   bool
+	}{
+		{
+			name: "no cycle",
+			fallbacks: map[language.Tag]language.Tag{
+				language.English: language.Spanish,
+				language.Spanish: language.Portuguese,
+			},
+			wantErr: false,
+		},
+		{
+			name: "direct cycle",
+			fallbacks: map[language.Tag]language.Tag{
+				language.English: language.Spanish,
+				language.Spanish: language.English,
+			},
+			wantErr: true,
+		},
+		{
+			name: "indirect cycle",
+			fallbacks: map[language.Tag]language.Tag{
+				language.English:    language.Spanish,
+				language.Spanish:    language.Portuguese,
+				language.Portuguese: language.English,
+			},
+			wantErr: true,
+		},
+		{
+			name:      "no fallbacks",
+			fallbacks: map[language.Tag]language.Tag{},
+			wantErr:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := checkCyclicFallbacks(tt.fallbacks)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
 }

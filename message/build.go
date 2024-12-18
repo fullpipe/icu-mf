@@ -14,87 +14,77 @@ func Build(in parse.Message, lang language.Tag) (Evalable, error) {
 		return buildFragment(*in.Fragments[0], lang)
 	}
 
-	root := Message{
+	root := &Message{
 		fragments: make([]Evalable, 0, len(in.Fragments)),
 	}
 
 	for _, f := range in.Fragments {
 		eval, err := buildFragment(*f, lang)
 		if err != nil {
-			// TODO: collect errors
 			return nil, err
 		}
-
 		root.fragments = append(root.fragments, eval)
 	}
 
-	return &root, nil
+	return root, nil
 }
 
 func buildFragment(f parse.Fragment, lang language.Tag) (Evalable, error) {
-	if len(f.Escaped) > 0 {
+	switch {
+	case len(f.Escaped) > 0:
 		return Content(f.Escaped[1:]), nil
-	}
-
-	if len(f.Text) > 0 {
+	case len(f.Text) > 0:
 		return Content(f.Text), nil
-	}
-
-	if f.Octothorpe {
+	case f.Octothorpe:
 		return PlainArg("#"), nil
-	}
-
-	if f.PlainArg != nil {
+	case f.PlainArg != nil:
 		return PlainArg(f.PlainArg.Name), nil
-	}
-
-	if f.Func != nil {
-		switch f.Func.Func {
-		case "number":
-			return buildNumber(f.Func, lang)
-		case "date", "time", "datetime":
-			return buildDatetime(f.Func, lang)
-		default:
-			return nil, errors.New("empty fragment")
-		}
-	}
-
-	if f.Expr == nil {
+	case f.Func != nil:
+		return buildFunc(f.Func, lang)
+	case f.Expr != nil:
+		return buildExpr(f.Expr, lang)
+	default:
 		return nil, errors.New("empty fragment")
 	}
+}
 
-	e := f.Expr
+func buildFunc(f *parse.Func, lang language.Tag) (Evalable, error) {
+	switch f.Func {
+	case "number":
+		return buildNumber(f, lang)
+	case "date", "time", "datetime":
+		return buildDatetime(f, lang)
+	default:
+		return nil, fmt.Errorf("unsupported function: %s", f.Func)
+	}
+}
 
-	if e.Name != "" && e.Func == "select" {
+func buildExpr(e *parse.Expr, lang language.Tag) (Evalable, error) {
+	switch e.Func {
+	case "select":
 		return buildSelect(e, lang)
-	}
-
-	if e.Name != "" && e.Func == "plural" {
+	case "plural", "selectordinal":
 		return buildPlural(e, lang)
+	default:
+		return nil, fmt.Errorf("unsupported expression: %s", e.Func)
 	}
-
-	if e.Name != "" && e.Func == "selectordinal" {
-		return buildPlural(e, lang)
-	}
-
-	return nil, errors.New("empty fragment")
 }
 
 func buildSelect(e *parse.Expr, lang language.Tag) (Evalable, error) {
 	if e == nil || e.Name == "" || e.Func != "select" {
-		return nil, errors.New("no a select expresion")
+		return nil, errors.New("invalid select expression")
 	}
 
 	if len(e.Cases) == 0 {
 		return nil, errors.New("empty select cases")
 	}
 
-	eval := Select{
+	eval := &Select{
 		ArgName: e.Name,
 		Cases:   make(map[string]Evalable, len(e.Cases)),
 	}
-	hasDefaultCase := false
 
+	hasDefaultCase := false
 	for _, c := range e.Cases {
 		if c.Name == DefaultCase {
 			hasDefaultCase = true
@@ -102,7 +92,6 @@ func buildSelect(e *parse.Expr, lang language.Tag) (Evalable, error) {
 
 		caseEval, err := Build(*c.Message, lang)
 		if err != nil {
-			// TODO: collect errors
 			return nil, err
 		}
 
@@ -113,12 +102,12 @@ func buildSelect(e *parse.Expr, lang language.Tag) (Evalable, error) {
 		return nil, errors.New("no 'other' case in select")
 	}
 
-	return &eval, nil
+	return eval, nil
 }
 
 func buildPlural(e *parse.Expr, lang language.Tag) (Evalable, error) {
 	if e == nil || e.Name == "" || (e.Func != "plural" && e.Func != "selectordinal") {
-		return nil, errors.New("no a select expresion")
+		return nil, errors.New("invalid plural expression")
 	}
 
 	if len(e.Cases) == 0 {
@@ -140,7 +129,6 @@ func buildPlural(e *parse.Expr, lang language.Tag) (Evalable, error) {
 	}
 
 	hasDefaultCase := false
-
 	for _, c := range e.Cases {
 		if c.Name == DefaultCase {
 			hasDefaultCase = true
@@ -148,27 +136,20 @@ func buildPlural(e *parse.Expr, lang language.Tag) (Evalable, error) {
 
 		caseEval, err := Build(*c.Message, lang)
 		if err != nil {
-			// TODO: collect errors
 			return nil, err
 		}
 
-		form, ok := strToFormMap[c.Name]
-		if ok {
+		if form, ok := strToFormMap[c.Name]; ok {
 			eval.Cases[form] = caseEval
-			continue
-		}
-
-		if c.Name[0] != '=' {
+		} else if c.Name[0] == '=' {
+			caseNum, err := strconv.ParseUint(c.Name[1:], 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			eval.EqCases[caseNum] = caseEval
+		} else {
 			return nil, fmt.Errorf("invalid plural case %s", c.Name)
 		}
-
-		caseNum, err := strconv.ParseUint(c.Name[1:], 10, 64)
-		if err != nil {
-			// TODO: collect errors
-			return nil, err
-		}
-
-		eval.EqCases[caseNum] = caseEval
 	}
 
 	if !hasDefaultCase {
@@ -176,45 +157,31 @@ func buildPlural(e *parse.Expr, lang language.Tag) (Evalable, error) {
 	}
 
 	return eval, nil
-
 }
 
-func buildNumber(e *parse.Func, lang language.Tag) (Evalable, error) {
-	if e == nil || e.Func != "number" {
-		return nil, errors.New("no a number function")
-	}
-
-	// format, ok := strToNumberFormatMap[e.Param]
-	format, ok := strToNumberFormatMap[e.Param]
+func buildNumber(f *parse.Func, lang language.Tag) (Evalable, error) {
+	format, ok := strToNumberFormatMap[f.Param]
 	if !ok {
-		return nil, fmt.Errorf("number format %s not supported", e.Param)
+		return nil, fmt.Errorf("number format %s not supported", f.Param)
 	}
 
-	return NewNumber(e.ArgName, format, lang), nil
+	return NewNumber(f.ArgName, format, lang), nil
 }
 
-func buildDatetime(e *parse.Func, lang language.Tag) (Evalable, error) {
-	if e == nil {
-		return nil, errors.New("empty expresiion")
-	}
-
-	if e.Func != "date" && e.Func != "time" && e.Func != "datetime" {
-		return nil, errors.New("not a date function")
-	}
-
-	format, ok := strToDatetimeFormatMap[e.Param]
+func buildDatetime(f *parse.Func, lang language.Tag) (Evalable, error) {
+	format, ok := strToDatetimeFormatMap[f.Param]
 	if !ok {
-		return nil, fmt.Errorf("date format %s not supported", e.Param)
+		return nil, fmt.Errorf("date format %s not supported", f.Param)
 	}
 
-	switch e.Func {
+	switch f.Func {
 	case "date":
-		return NewDate(e.ArgName, format, lang), nil
+		return NewDate(f.ArgName, format, lang), nil
 	case "time":
-		return NewTime(e.ArgName, format, lang), nil
+		return NewTime(f.ArgName, format, lang), nil
 	case "datetime":
-		return NewDatetime(e.ArgName, format, lang), nil
+		return NewDatetime(f.ArgName, format, lang), nil
+	default:
+		return nil, fmt.Errorf("unsupported datetime function: %s", f.Func)
 	}
-
-	return nil, errors.New("not a date function")
 }
