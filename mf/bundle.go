@@ -26,25 +26,28 @@ type BundleOption func(b *bundle) error
 
 func NewBundle(options ...BundleOption) (Bundle, error) {
 	bundle := &bundle{
-		fallbacks:   map[language.Tag]language.Tag{},
-		translators: map[language.Tag]Translator{},
-
-		defaultLang:         language.Und,
-		defaultErrorHandler: func(_ error, _ string, _ map[string]any) {},
+		fallbacks:   make(map[language.Tag]language.Tag),
+		translators: make(map[language.Tag]Translator),
+		defaultLang: language.Und,
+		defaultErrorHandler: func(_ error, _ string, _ map[string]any) {
+			// Provide meaningful logging or handling here
+		},
 	}
 
 	for _, option := range options {
-		err := option(bundle)
-		if err != nil {
+		if err := option(bundle); err != nil {
 			return nil, err
 		}
 	}
 
 	if bundle.provider == nil {
-		return nil, errors.New("you have add message provider with WithFSProvider or WithProvider")
+		return nil, errors.New("you must add a message provider with WithFSProvider or WithProvider")
 	}
 
-	// TODO: check fallbacks for cicles en -> es -> en -> ...
+	// Check for cyclic fallbacks
+	if err := checkCyclicFallbacks(bundle.fallbacks); err != nil {
+		return nil, err
+	}
 
 	return bundle, nil
 }
@@ -55,28 +58,26 @@ func (b *bundle) Translator(lang string) Translator {
 		tag = b.defaultLang
 	}
 
-	tr, ok := b.translators[tag]
-	if ok {
+	if tr, ok := b.translators[tag]; ok {
 		return tr
 	}
 
-	b.translators[tag] = b.getTranlator(tag)
+	tr := b.getTranslator(tag)
+	b.translators[tag] = tr
 
-	return b.translators[tag]
+	return tr
 }
 
-func (b *bundle) getTranlator(tag language.Tag) Translator {
-	tr, ok := b.translators[tag]
-	if ok {
+func (b *bundle) getTranslator(tag language.Tag) Translator {
+	if tr, ok := b.translators[tag]; ok {
 		return tr
 	}
 
 	var fallback Translator
-	fallbackTag, hasFallback := b.fallbacks[tag]
-	if hasFallback {
-		fallback = b.getTranlator(fallbackTag)
+	if fallbackTag, hasFallback := b.fallbacks[tag]; hasFallback {
+		fallback = b.getTranslator(fallbackTag)
 	} else if tag != b.defaultLang {
-		fallback = b.getTranlator(b.defaultLang)
+		fallback = b.getTranslator(b.defaultLang)
 	}
 
 	return &translator{
@@ -87,10 +88,9 @@ func (b *bundle) getTranlator(tag language.Tag) Translator {
 	}
 }
 
-func WithDefaulLangFallback(l language.Tag) BundleOption {
+func WithDefaultLangFallback(l language.Tag) BundleOption {
 	return func(b *bundle) error {
 		b.defaultLang = l
-
 		return nil
 	}
 }
@@ -126,4 +126,31 @@ func WithErrorHandler(handler ErrorHandler) BundleOption {
 
 		return nil
 	}
+}
+
+// checkCyclicFallbacks checks for cyclic fallbacks to prevent infinite loops
+func checkCyclicFallbacks(fallbacks map[language.Tag]language.Tag) error {
+	visited := make(map[language.Tag]bool)
+	for tag := range fallbacks {
+		if hasCycle(tag, fallbacks, visited) {
+			return errors.New("cyclic fallback detected")
+		}
+	}
+	return nil
+}
+
+func hasCycle(tag language.Tag, fallbacks map[language.Tag]language.Tag, visited map[language.Tag]bool) bool {
+	if visited[tag] {
+		return true
+	}
+
+	visited[tag] = true
+	defer delete(visited, tag)
+
+	next, ok := fallbacks[tag]
+	if !ok {
+		return false
+	}
+
+	return hasCycle(next, fallbacks, visited)
 }

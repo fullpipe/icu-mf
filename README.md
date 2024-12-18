@@ -59,7 +59,7 @@ Create translations bundle
 ```go
 bundle, err := mf.NewBundle(
     // If not possible to find a message for the specific language, fallback to English (EN)
-    mf.WithDefaulLangFallback(language.English),
+    mf.WithDefaultLangFallback(language.English),
 
     // We could fine-tune fallbacks for some languages
     mf.WithLangFallback(language.BritishEnglish, language.English),
@@ -125,7 +125,7 @@ var messagesDir embed.FS
 
 func main() {
 	bundle, err := mf.NewBundle(
-		mf.WithDefaulLangFallback(language.English),
+		mf.WithDefaultLangFallback(language.English),
 
 		mf.WithLangFallback(language.BritishEnglish, language.English),
 		mf.WithLangFallback(language.Portuguese, language.Spanish),
@@ -198,7 +198,6 @@ escape: "'{foo} is ''{foo}''"
 tr.Trans("escape", mf.Arg("foo", "bar"))
 // {foo} is 'bar'
 ```
-
 
 ## MessageFormat overview
 
@@ -473,10 +472,10 @@ Additionally, there are four different formats: `short`, `medium`, `long`, and `
 # translations/messages.en.yaml
 
 vostok:
-    start: Vostok-1 start {start_date, datetime, long}.
-    landing: Vostok-1 landing time {land_time, time, medium}.
+  start: Vostok-1 start {start_date, datetime, long}.
+  landing: Vostok-1 landing time {land_time, time, medium}.
 apollo:
-    step: First step on the Moon on {step_date, date, long}.
+  step: First step on the Moon on {step_date, date, long}.
 ```
 
 ```go
@@ -493,4 +492,3 @@ tr.Trans("vostok.landing", mf.Time("land_time", land))
 tr.Trans("apollo.step", mf.Time("step_date", step))
 // First step on the Moon on July 21, 1969.
 ```
-

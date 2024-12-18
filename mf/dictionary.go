@@ -18,7 +18,7 @@ func (*DummyDictionary) Get(id string) (string, error) {
 
 func NewYamlDictionary(yaml []byte) (*YamlDictionary, error) {
 	d := &YamlDictionary{
-		flatMap: map[string]string{},
+		flatMap: make(map[string]string),
 	}
 
 	var document y3.Node
@@ -38,33 +38,25 @@ type YamlDictionary struct {
 }
 
 func (d *YamlDictionary) Get(id string) (string, error) {
-	msg, ok := d.flatMap[id]
-	if !ok {
-		return "", fmt.Errorf("no message with id %s", id)
+	if msg, ok := d.flatMap[id]; ok {
+		return msg, nil
 	}
 
-	return msg, nil
+	return "", fmt.Errorf("no message with id %s", id)
 }
 
 func (d *YamlDictionary) buildFlatMap(prefix string, yn *y3.Node) {
-	for i := 0; i < len(yn.Content); i++ {
-		n := yn.Content[i]
+	for i := 0; i < len(yn.Content); i += 2 {
+		keyNode := yn.Content[i]
+		valueNode := yn.Content[i+1]
 
-		if n.Kind == y3.MappingNode {
-			d.buildFlatMap(prefix+n.Value+".", n)
+		key := prefix + keyNode.Value
 
-			continue
-		}
-
-		if n.Kind == y3.ScalarNode {
-			if yn.Content[i+1].Kind == y3.ScalarNode {
-				d.flatMap[prefix+n.Value] = yn.Content[i+1].Value
-			} else if yn.Content[i+1].Kind == y3.MappingNode {
-				d.buildFlatMap(prefix+n.Value+".", yn.Content[i+1])
-			}
-
-			i++
-			continue
+		switch valueNode.Kind {
+		case y3.ScalarNode:
+			d.flatMap[key] = valueNode.Value
+		case y3.MappingNode:
+			d.buildFlatMap(key+".", valueNode)
 		}
 	}
 }
