@@ -57,6 +57,8 @@ func (d *YamlDictionary) buildFlatMap(prefix string, yn *y3.Node) {
 			d.flatMap[key] = valueNode.Value
 		case y3.MappingNode:
 			d.buildFlatMap(key+".", valueNode)
+		case y3.DocumentNode, y3.SequenceNode, y3.AliasNode:
+			// Ignore other node types
 		}
 	}
 }
