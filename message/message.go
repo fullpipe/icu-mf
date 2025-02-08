@@ -3,6 +3,7 @@ package message
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 type Evalable interface {
@@ -14,7 +15,7 @@ type Message struct {
 }
 
 func (m *Message) Eval(ctx Context) (string, error) {
-	var res string
+	var builder strings.Builder
 
 	for _, child := range m.fragments {
 		childRes, err := child.Eval(ctx)
@@ -22,10 +23,10 @@ func (m *Message) Eval(ctx Context) (string, error) {
 			return "", err
 		}
 
-		res += childRes
+		builder.WriteString(childRes)
 	}
 
-	return res, nil
+	return builder.String(), nil
 }
 
 type Content string
