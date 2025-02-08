@@ -25,25 +25,30 @@ type Plural struct {
 	formFunc func(lang language.Tag, i int, v int, w int, f int, t int) plural.Form
 }
 
+// NewPlural creates a new Plural for cardinal plurals.
 func NewPlural(argName string, lang language.Tag, offset int) *Plural {
-	return &Plural{
-		ArgName:  argName,
-		Lang:     lang,
-		Cases:    map[plural.Form]Evalable{},
-		EqCases:  map[uint64]Evalable{},
-		Offset:   offset,
-		formFunc: plural.Cardinal.MatchPlural,
-	}
+	return newPlural(argName, lang, offset, plural.Cardinal.MatchPlural)
 }
 
+// NewSelectOrdinal creates a new Plural for ordinal plurals.
 func NewSelectOrdinal(argName string, lang language.Tag, offset int) *Plural {
+	return newPlural(argName, lang, offset, plural.Ordinal.MatchPlural)
+}
+
+// newPlural is a helper function to create a new Plural.
+func newPlural(
+	argName string,
+	lang language.Tag,
+	offset int,
+	formFunc func(lang language.Tag, i int, v int, w int, f int, t int) plural.Form,
+) *Plural {
 	return &Plural{
 		ArgName:  argName,
 		Lang:     lang,
 		Cases:    map[plural.Form]Evalable{},
 		EqCases:  map[uint64]Evalable{},
 		Offset:   offset,
-		formFunc: plural.Ordinal.MatchPlural,
+		formFunc: formFunc,
 	}
 }
 
@@ -100,7 +105,7 @@ func (p *Plural) Eval(ctx Context) (string, error) {
 	}
 
 	pi := np.i
-	if pi > math.MaxInt {
+	if pi > math.MaxInt { // Use integer division for large numbers to avoid int overflow in plural.MatchPlural
 		pi /= 10_000_000
 	}
 	form := p.formFunc(p.Lang, int(pi), np.v, np.w, np.f, np.t) //nolint: gosec
@@ -156,51 +161,55 @@ func toPluralForm(num any) (pm, error) {
 	case uint64:
 		return pm{i: i}, nil
 	case float32:
-		return toPluralForm(strconv.FormatFloat(float64(i), 'f', -1, 32))
+		return parseString(strconv.FormatFloat(float64(i), 'f', -1, 32))
 	case float64:
-		return toPluralForm(strconv.FormatFloat(i, 'f', -1, 64))
+		return parseString(strconv.FormatFloat(i, 'f', -1, 64))
 	case string:
-		if i[0] == '-' {
-			i = i[1:]
-		}
-
-		parts := strings.SplitN(i, ".", 2)
-		pmi, err := strconv.ParseUint(parts[0], 10, 32)
-
-		if err != nil {
-			return pm{}, fmt.Errorf("unable to parse uint part %s of %s", parts[0], i)
-		}
-
-		if len(parts) == 1 {
-			return pm{i: uint64(pmi)}, nil
-		}
-
-		decimalPart := parts[1]
-		decimalPartTrail := strings.TrimRight(decimalPart, "0")
-		pmf, err := strconv.ParseUint(decimalPart, 10, 32)
-
-		if err != nil {
-			return pm{}, fmt.Errorf("unable to parse decimalPart part %s of %s", decimalPart, i)
-		}
-
-		pmt := uint64(0)
-		if decimalPartTrail != "" {
-			pmt, err = strconv.ParseUint(decimalPartTrail, 10, 32)
-			if err != nil {
-				return pm{}, fmt.Errorf("unable to parse decimalPartTrail part %s of %s", decimalPartTrail, i)
-			}
-		}
-
-		return pm{
-			i: uint64(pmi),
-			v: len(decimalPart),
-			w: len(decimalPartTrail),
-			f: int(pmf), //nolint: gosec
-			t: int(pmt), //nolint: gosec
-		}, nil
+		return parseString(i)
 	default:
 		return pm{}, fmt.Errorf("unable convert %v to plural form", num)
 	}
+}
+
+func parseString(str string) (pm, error) {
+	if strings.HasPrefix(str, "-") { // Remove negative if it is there
+		str = str[1:]
+	}
+
+	parts := strings.SplitN(str, ".", 2)
+	pmi, err := strconv.ParseUint(parts[0], 10, 32)
+
+	if err != nil {
+		return pm{}, fmt.Errorf("unable to parse uint part %s of %s", parts[0], str)
+	}
+
+	if len(parts) == 1 {
+		return pm{i: uint64(pmi)}, nil
+	}
+
+	decimalPart := parts[1]
+	decimalPartTrail := strings.TrimRight(decimalPart, "0")
+	pmf, err := strconv.ParseUint(decimalPart, 10, 32)
+
+	if err != nil {
+		return pm{}, fmt.Errorf("unable to parse decimalPart part %s of %s", decimalPart, str)
+	}
+
+	pmt := uint64(0)
+	if decimalPartTrail != "" {
+		pmt, err = strconv.ParseUint(decimalPartTrail, 10, 32)
+		if err != nil {
+			return pm{}, fmt.Errorf("unable to parse decimalPartTrail part %s of %s", decimalPartTrail, str)
+		}
+	}
+
+	return pm{
+		i: uint64(pmi),
+		v: len(decimalPart),
+		w: len(decimalPartTrail),
+		f: int(pmf), //nolint: gosec
+		t: int(pmt), //nolint: gosec
+	}, nil
 }
 
 var _ Evalable = (*Plural)(nil)

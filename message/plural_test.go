@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/text/feature/plural"
 	"golang.org/x/text/language"
 )
@@ -298,6 +300,40 @@ func Test_toPluralForm(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("toPluralForm() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseString(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected pm
+		wantErr  bool
+	}{
+		{"1", pm{i: 1}, false},
+		{"-1", pm{i: 1}, false}, // Test negative number handling
+		{"1.0", pm{i: 1, v: 1, w: 0, f: 0, t: 0}, false},
+		{"1.23", pm{i: 1, v: 2, w: 2, f: 23, t: 23}, false},
+		{"1.230", pm{i: 1, v: 3, w: 2, f: 230, t: 23}, false},
+		{"1.000", pm{i: 1, v: 3, w: 0, f: 0, t: 0}, false},
+		{"-1.23", pm{i: 1, v: 2, w: 2, f: 23, t: 23}, false},                 // Test negative number with decimals
+		{"-12345.67890", pm{i: 12345, v: 5, w: 4, f: 67890, t: 6789}, false}, // Test longer numbers
+		{"12345", pm{i: 12345}, false},                                       // Test larger integer
+		{"abc", pm{}, true},
+		{"1.abc", pm{}, true},
+		{"1.2abc", pm{}, true},
+		{"1.230abc", pm{}, true},
+	}
+
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			actual, err := parseString(test.input)
+			if test.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, test.expected, actual)
 			}
 		})
 	}
