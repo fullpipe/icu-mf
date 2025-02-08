@@ -43,7 +43,14 @@ func (pa PlainArg) Eval(ctx Context) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprint(v), nil
+	switch v := v.(type) {
+	case string:
+		return v, nil
+	case int, int32, int64, float32, float64:
+		return fmt.Sprintf("%v", v), nil
+	default:
+		return fmt.Sprint(v), nil
+	}
 }
 
 // {age, number, integer}
