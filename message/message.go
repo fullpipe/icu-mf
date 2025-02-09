@@ -1,8 +1,8 @@
 package message
 
 import (
-	"errors"
 	"fmt"
+	"strings"
 )
 
 type Evalable interface {
@@ -14,7 +14,7 @@ type Message struct {
 }
 
 func (m *Message) Eval(ctx Context) (string, error) {
-	var res string
+	var builder strings.Builder
 
 	for _, child := range m.fragments {
 		childRes, err := child.Eval(ctx)
@@ -22,10 +22,10 @@ func (m *Message) Eval(ctx Context) (string, error) {
 			return "", err
 		}
 
-		res += childRes
+		builder.WriteString(childRes)
 	}
 
-	return res, nil
+	return builder.String(), nil
 }
 
 type Content string
@@ -42,7 +42,14 @@ func (pa PlainArg) Eval(ctx Context) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprint(v), nil
+	switch v := v.(type) {
+	case string:
+		return v, nil
+	case int, int32, int64, float32, float64:
+		return fmt.Sprintf("%v", v), nil
+	default:
+		return fmt.Sprint(v), nil
+	}
 }
 
 // {age, number, integer}
@@ -52,41 +59,8 @@ type FunctionArg struct {
 	Param   string
 }
 
-// { GENDER, select,
-//
-//	    male {He}
-//	    female {She}
-//	    other {They}
-//	} liked this.
-const DefaultCase = "other"
-
-type Select struct {
-	ArgName string
-	Cases   map[string]Evalable
-}
-
-var ErrNoDefaultCase = errors.New("no default case")
-
-func (s *Select) Eval(ctx Context) (string, error) {
-	v, err := ctx.String(s.ArgName)
-	if err == nil {
-		c, ok := s.Cases[v]
-		if ok {
-			return c.Eval(ctx)
-		}
-	}
-
-	c, ok := s.Cases[DefaultCase]
-	if ok {
-		return c.Eval(ctx)
-	}
-
-	return "", ErrNoDefaultCase
-}
-
 var (
 	_ Evalable = (*Content)(nil)
 	_ Evalable = (*Message)(nil)
 	_ Evalable = (*PlainArg)(nil)
-	_ Evalable = (*Select)(nil)
 )
