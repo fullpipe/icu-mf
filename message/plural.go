@@ -177,14 +177,14 @@ func parseString(str string) (pm, error) {
 	}
 
 	parts := strings.SplitN(str, ".", 2)
-	pmi, err := strconv.ParseUint(parts[0], 10, 32)
+	pmi, err := strconv.ParseUint(parts[0], 10, 64)
 
 	if err != nil {
 		return pm{}, fmt.Errorf("unable to parse uint part %s of %s", parts[0], str)
 	}
 
 	if len(parts) == 1 {
-		return pm{i: uint64(pmi)}, nil
+		return pm{i: pmi}, nil
 	}
 
 	decimalPart := parts[1]
@@ -204,7 +204,7 @@ func parseString(str string) (pm, error) {
 	}
 
 	return pm{
-		i: uint64(pmi),
+		i: pmi,
 		v: len(decimalPart),
 		w: len(decimalPartTrail),
 		f: int(pmf), //nolint: gosec
