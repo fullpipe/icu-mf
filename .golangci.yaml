@@ -17,8 +17,10 @@ linters:
     # - test
     - unused
 issues:
+  exclude-dirs:
+    - example
   exclude-rules:
-    - path: 'parse/parser.go'
+    - path: "parse/parser.go"
       linters:
         - govet
         - tagalign
