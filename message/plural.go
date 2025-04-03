@@ -172,10 +172,7 @@ func toPluralForm(num any) (pm, error) {
 }
 
 func parseString(str string) (pm, error) {
-	if strings.HasPrefix(str, "-") { // Remove negative if it is there
-		str = str[1:]
-	}
-
+	str = strings.TrimPrefix(str, "-") // Remove negative if it is there
 	parts := strings.SplitN(str, ".", 2)
 	pmi, err := strconv.ParseUint(parts[0], 10, 64)
 
