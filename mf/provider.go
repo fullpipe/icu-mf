@@ -15,8 +15,14 @@ type MessageProvider interface {
 	Get(lang language.Tag, id string) (string, error)
 }
 
+type LanguagesProvider interface {
+	MessageProvider
+	Languages() []language.Tag
+}
+
 type YamlMessageProvider struct {
 	dictionaries map[language.Tag]*YamlDictionary
+	languages    []language.Tag
 }
 
 func (p *YamlMessageProvider) Get(lang language.Tag, path string) (string, error) {
@@ -26,6 +32,10 @@ func (p *YamlMessageProvider) Get(lang language.Tag, path string) (string, error
 	}
 
 	return d.Get(path)
+}
+
+func (p *YamlMessageProvider) Languages() []language.Tag {
+	return p.languages
 }
 
 func NewYamlMessageProvider(dir fs.FS) (*YamlMessageProvider, error) {
@@ -82,6 +92,6 @@ func (p *YamlMessageProvider) loadMessages(rd fs.FS, path string, lang language.
 	if err != nil {
 		return errors.Wrap(err, "unable to create dictionary")
 	}
-
+	p.languages = append(p.languages, lang)
 	return nil
 }

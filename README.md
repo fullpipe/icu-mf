@@ -106,6 +106,21 @@ trEs := bundle.Translator("es")
 trEs.Trans("say_hello", mf.Arg("name", "Aníbal"))
 ```
 
+Find the best translation from user preferences
+
+```go
+
+handler( w http.ResponseWriter, r *http.Request) {
+    langCookie, _ := r.Cookie("lang")
+	// langCookie = "es-AR"
+	acceptHeader := r.Header.Get("Accept-Language")
+	// acceptHeader = "da, en-gb;q=0.8, en;q=0.7"
+	
+	tr := bundle.Translator(langCookie, acceptHeader)
+	// tr will translate to the closest matching language, e.g. Spanish, "es"
+}
+```
+
 <details>
   <summary>Full example</summary>
 

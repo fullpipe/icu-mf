@@ -1,11 +1,14 @@
 package mf
 
 import (
+	"fmt"
 	"testing"
+	"testing/fstest"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/text/language"
 )
 
@@ -493,6 +496,125 @@ func Test_translator_Trans(t *testing.T) {
 			} else {
 				assert.NoError(t, testErr)
 			}
+		})
+	}
+}
+
+func Test_translator_SimilarLanguages(t *testing.T) {
+	tests := []struct {
+		name           string
+		translatorLang language.Tag
+		wantedLang     language.Tag
+		want           string
+	}{
+		{
+			"identical languages",
+			language.English,
+			language.English,
+			"englishTranslation",
+		},
+		{
+			"british to english",
+			language.BritishEnglish,
+			language.English,
+			"englishTranslation",
+		},
+		{
+			"english to british",
+			language.English,
+			language.BritishEnglish,
+			"englishTranslation",
+		},
+		{
+			"british to american",
+			language.BritishEnglish,
+			language.AmericanEnglish,
+			"englishTranslation",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b, err := NewBundle(
+				WithDefaultLangFallback(language.Spanish),
+				WithYamlProvider(fstest.MapFS{
+					"messages.es.yaml": {Data: []byte("msg_id: spanishTranslation")},
+					fmt.Sprintf("messages.%s.yaml", tt.translatorLang): {Data: []byte("msg_id: englishTranslation")},
+				}),
+			)
+			require.NoError(t, err)
+
+			var testErr error
+
+			tr := b.Translator(tt.wantedLang.String())
+
+			got := tr.Trans("msg_id")
+			assert.Equal(t, tt.want, got)
+
+			assert.NoError(t, testErr)
+		})
+	}
+}
+
+func Test_translator_Web(t *testing.T) {
+	tests := []struct {
+		name           string
+		cookie         string
+		acceptLanguage string
+		want           string
+	}{
+		{
+			"defaults",
+			"",
+			"",
+			"spanishTranslation",
+		},
+		{
+			"cookie",
+			"en-GB",
+			"",
+			"englishTranslation",
+		},
+		{
+			"Accept-Language",
+			"",
+			"da, en-gb;q=0.7, de;q=0.8",
+			"germanTranslation",
+		},
+		{
+			"Cookie wins",
+			"fr-CA",
+			"en",
+			"frenchTranslation",
+		},
+		{
+			"Fallback",
+			"da",
+			"it",
+			"spanishTranslation",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b, err := NewBundle(
+				WithDefaultLangFallback(language.Spanish),
+				WithYamlProvider(fstest.MapFS{
+					"messages.es.yaml": {Data: []byte("msg_id: spanishTranslation")},
+					"messages.en.yaml": {Data: []byte("msg_id: englishTranslation")},
+					"messages.de.yaml": {Data: []byte("msg_id: germanTranslation")},
+					"messages.fr.yaml": {Data: []byte("msg_id: frenchTranslation")},
+				}),
+			)
+			require.NoError(t, err)
+
+			var testErr error
+
+			tr := b.Translator(tt.cookie, tt.acceptLanguage)
+
+			got := tr.Trans("msg_id")
+			assert.Equal(t, tt.want, got)
+
+			assert.NoError(t, testErr)
 		})
 	}
 }

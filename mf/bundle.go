@@ -8,14 +8,15 @@ import (
 )
 
 type Bundle interface {
-	Translator(lang string) Translator
+	Translator(lang ...string) Translator
 }
 
 type bundle struct {
-	fallbacks   map[language.Tag]language.Tag
-	translators map[language.Tag]Translator
-	provider    MessageProvider
-
+	fallbacks           map[language.Tag]language.Tag
+	translators         map[language.Tag]Translator
+	provider            MessageProvider
+	matcher             language.Matcher
+	languages           []language.Tag
 	defaultLang         language.Tag
 	defaultErrorHandler ErrorHandler
 }
@@ -43,6 +44,21 @@ func NewBundle(options ...BundleOption) (Bundle, error) {
 	if bundle.provider == nil {
 		return nil, errors.New("you must add a message provider with WithFSProvider or WithProvider")
 	}
+	languagesProvider, ok := bundle.provider.(LanguagesProvider)
+	if ok {
+		languages := languagesProvider.Languages()
+		for j, v := range languages {
+			if v == bundle.defaultLang {
+				for i := j; i > 0; i-- {
+					languages[i] = languages[i-1]
+				}
+				languages[0] = bundle.defaultLang
+				break
+			}
+		}
+		bundle.languages = languages
+		bundle.matcher = language.NewMatcher(languages)
+	}
 
 	// Check for cyclic fallbacks
 	if err := checkCyclicFallbacks(bundle.fallbacks); err != nil {
@@ -52,10 +68,20 @@ func NewBundle(options ...BundleOption) (Bundle, error) {
 	return bundle, nil
 }
 
-func (b *bundle) Translator(lang string) Translator {
-	tag, err := language.Parse(lang)
-	if err != nil {
+func (b *bundle) Translator(lang ...string) Translator {
+	var tag language.Tag
+	if b.matcher != nil {
+		var idx int
+		_, idx = language.MatchStrings(b.matcher, lang...)
+		tag = b.languages[idx]
+	} else if len(lang) == 0 {
 		tag = b.defaultLang
+	} else {
+		var err error
+		tag, err = language.Parse(lang[0])
+		if err != nil {
+			tag = b.defaultLang
+		}
 	}
 
 	if tr, ok := b.translators[tag]; ok {
